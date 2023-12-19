@@ -1,10 +1,4 @@
-#include	"unp.h"
-#include <iostream>
-#include <cstring>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <vector>
-#include <unordered_map>
+#include "header.h"
 using namespace std;
 
 void sig_chld(int signo){
@@ -53,58 +47,54 @@ Game::serialize(Packet packet, char* buffer){ memcpy(buffer, &packet, sizeof(Pac
 Game::deserialize(Packet packet, char* buffer){ memcpy(&packet, buffer, sizeof(Packet)); }
 Game::broadcast_xy(Packet packet, int sockfd){
     char buffer[MAXLINE];
-    for(int i = 0; i < players.size(); i++){
-        if(players[i].sockfd != sockfd){
+    for (auto& player : players){
+        if(player.second.sockfd != sockfd){
             //send
             serialize(packet, buffer);
-            Write(players[i].sockfd, buffer, sizeof(Packet));
+            write(player.second.sockfd, buffer, sizeof(Packet));
         }
     }
 }
-Game::handle_client(int sockfd, char* name){
-    int n;
-    char buffer[MAXLINE], sendline[MAXLINE];
-    Player player = players[name];
+// Game::handle_client(int sockfd, char* name){
+//     int n;
+//     char buffer[MAXLINE], sendline[MAXLINE];
+//     Player player = players[name];
 
-    while(true){
-        if(strcmp(player.mode_player, "MAP") == 0){
-            n = Read(sockfd, buffer, MAXLINE);
-            Packet packet;
-            deserialize(packet, buffer);
-            //轉移至 chat mode
-            if(strcmp(packet.mode_packet, "REQUEST") == 0){
-                if(strcmp(packet.message, "1st request\n") == 0){
-                    snprintf(sendline, sizeof(sendline), "Do you want to connect? (Yes/No)\n");
-                }else if(strcmp(packet.message, "Yes\n") == 0){
-                    snprintf(sendline, sizeof(sendline), "Can connect.\n");
-                }else if(strcmp(packet.message, "No\n") == 0){
-                    snprintf(sendline, sizeof(sendline), "Can't connect.\n");
-                }
-                Write(players[packet.receiver_name].sockfd, sendline, strlen(sendline));
-                continue;
-            }
-            //map mode
-            Packet new_packet;
-            new_packet.mode_packet = packet.mode_packet;
+//     while(true){
+//         if(strcmp(player.mode_player, "MAP") == 0){
+//             n = Read(sockfd, buffer, MAXLINE);
+//             Packet packet;
+//             deserialize(packet, buffer);
+//             //轉移至 chat mode
+//             if(strcmp(packet.mode_packet, "REQUEST") == 0){
+//                 if(strcmp(packet.message, "1st request\n") == 0){
+//                     snprintf(sendline, sizeof(sendline), "Do you want to connect? (Yes/No)\n");
+//                 }else if(strcmp(packet.message, "Yes\n") == 0){
+//                     snprintf(sendline, sizeof(sendline), "Can connect.\n");
+//                 }else if(strcmp(packet.message, "No\n") == 0){
+//                     snprintf(sendline, sizeof(sendline), "Can't connect.\n");
+//                 }
+//                 Write(players[packet.receiver_name].sockfd, sendline, strlen(sendline));
+//                 continue;
+//             }
+//             //map mode
+//             Packet new_packet;
+//             new_packet.mode_packet = packet.mode_packet;
 
-            new_packet.x_packet = packet.x_packet;
-            new_packet.y_packet = packet.y_packet;
-            broadcast_xy(new_packet, sockfd);
-        }else if(player.mode_player == CHAT_MODE){
-            n = Read(sockfd, buffer, MAXLINE);
-            Packet packet;
-            deserialize(packet, buffer);
-            //轉移至 map mode
-            if() player.mode_player = MAP_MODE;
-            //chat mode
+//             new_packet.x_packet = packet.x_packet;
+//             new_packet.y_packet = packet.y_packet;
+//             broadcast_xy(new_packet, sockfd);
+//         }else if(player.mode_player == CHAT_MODE){
+//             n = Read(sockfd, buffer, MAXLINE);
+//             Packet packet;
+//             deserialize(packet, buffer);
+//             //轉移至 map mode
+//             if() player.mode_player = MAP_MODE;
+//             //chat mode
 
-        }
-    }
-
-
-
-
-}
+//         }
+//     }
+// }
 
 int main() {
     int                 n;
@@ -125,9 +115,9 @@ int main() {
 	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	servaddr.sin_port        = htons(11130);
 
-    Bind(listenfd, (SA *) &servaddr, sizeof(servaddr));
-    Listen(listenfd, LISTENQ);
-    Signal(SIGCHLD, sig_chld);
+    bind(listenfd, (SA *) &servaddr, sizeof(servaddr));
+    listen(listenfd, LISTENQ);
+    signal(SIGCHLD, sig_chld);
 
     maxfd = listenfd;
     FD_ZERO(&rset);
@@ -138,7 +128,7 @@ int main() {
 
     while(true){
         rset = allset;
-        n = Select(maxfd + 1, &rset, NULL, NULL, NULL);
+        n = select(maxfd + 1, &rset, NULL, NULL, NULL);
         //listenfd
         if(FD_ISSET(listenfd, &rset)){
             clilen = sizeof(cliaddr);
@@ -147,21 +137,32 @@ int main() {
                 if (errno == EINTR)
                         continue;
                 else
-                        err_sys("accept error");
+                    perror("accept error");
+                    return;
             }
             //讀 ID
             //name in recvline
-            n = Read(connfd, recvline, MAXLINE);
+            n = read(connfd, recvline, MAXLINE);
             //放入 vector
             Player new_player;
             new_player.sockfd = connfd;
-            new_player.mode_player = "map";
-            new_player.x = 0.0f;
-            new_player.y = 0.0f;
+            new_player.mode_player = MAPMODE;
+            new_player.x_player = 0.0f;
+            new_player.y_player = 0.0f;
             game.add_player(recvline, new_player);
-            /
-        }
 
+            FD_SET(connfd, &allset);
+            if(connfd > maxfd) maxfd = connfd;
+        }
+        //看每個 client
+        int num_players = game.get_player_size();
+        for (const auto& player : game.players){
+            sockfd = player.second.sockfd;
+            if(FD_ISSET(sockfd, &rset)){
+                //handle_client
+                
+            }
+        }
 
 
     }

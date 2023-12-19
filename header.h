@@ -9,7 +9,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
-#define MAXMODE     0
+#include <signal.h>
+#define MAPMODE     0
 #define CHATMODE    1
 #define REQUESTMODE 2
 #define GAMEPORT    11130
