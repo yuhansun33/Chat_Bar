@@ -13,5 +13,6 @@
 #define chatMode 1
 #define requestMode 2
 #define gamePort 11130
+#define MAXLINE 1024
 #define serverIP "127.0.0.1"
 #endif
