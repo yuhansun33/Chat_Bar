@@ -12,7 +12,7 @@
 #include <signal.h>
 #define MAPMODE     0
 #define CHATMODE    1
-#define REQUESTMODE 2
+#define REQMODE     2
 #define GAMEPORT    11130
 #define MAXLINE     4096
 #define LISTENQ     1024
