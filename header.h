@@ -9,10 +9,12 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
-#define mapMode 0
-#define chatMode 1
-#define requestMode 2
-#define gamePort 11130
-#define MAXLINE 1024
-#define serverIP "127.0.0.1"
+#define MAXMODE     0
+#define CHATMODE    1
+#define REQUESTMODE 2
+#define GAMEPORT    11130
+#define MAXLINE     4096
+#define LISTENQ     1024
+#define SA          struct sockaddr
+#define SERVERIP    "127.0.0.1"
 #endif
