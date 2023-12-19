@@ -16,18 +16,16 @@ void sig_chld(int signo){
 }
 
 struct Packet{
-	char mode_packet[MAXLINE]; //MAP , REQUEST, CHAT
+	int mode_packet; //MAP , REQUEST, CHAT
 	char sender_name[MAXLINE]; //sender name
     char receiver_name[MAXLINE]; //receiver name
 	float x_packet;
 	float y_packet;
-    unordered_map<const char*, struct Player> players;
 	char message[MAXLINE];
 };
 struct Player{
 	int sockfd;
-    // char name_player[MAXLINE];
-    char mode_player[MAXLINE]; //MAP , CHAT
+    int mode_player; //MAP , CHAT
 	float x_player;
 	float y_player;
 };
@@ -117,46 +115,55 @@ int main() {
     time_t			    ticks;
     FILE			    *fp;
 
+    int maxfd;
+    fd_set rset, allset;
+
     listenfd = socket(AF_INET, SOCK_STREAM, 0);
     
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family      = AF_INET;
 	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servaddr.sin_port        = htons(SERV_PORT + 3);
+	servaddr.sin_port        = htons(11130);
 
     Bind(listenfd, (SA *) &servaddr, sizeof(servaddr));
     Listen(listenfd, LISTENQ);
     Signal(SIGCHLD, sig_chld);
 
+    maxfd = listenfd;
+    FD_ZERO(&rset);
+    FD_ZERO(&allset);
+    FD_SET(listenfd, &allset);
+
     Game game;
 
     while(true){
-        clilen = sizeof(cliaddr);
-        //accept
-        if ( (connfd = accept(listenfd, (SA *) &cliaddr, &clilen)) < 0) {
-            if (errno == EINTR)
-                    continue;
-            else
-                    err_sys("accept error");
+        rset = allset;
+        n = Select(maxfd + 1, &rset, NULL, NULL, NULL);
+        //listenfd
+        if(FD_ISSET(listenfd, &rset)){
+            clilen = sizeof(cliaddr);
+            //accept
+            if ( (connfd = accept(listenfd, (SA *) &cliaddr, &clilen)) < 0) {
+                if (errno == EINTR)
+                        continue;
+                else
+                        err_sys("accept error");
+            }
+            //讀 ID
+            //name in recvline
+            n = Read(connfd, recvline, MAXLINE);
+            //放入 vector
+            Player new_player;
+            new_player.sockfd = connfd;
+            new_player.mode_player = "map";
+            new_player.x = 0.0f;
+            new_player.y = 0.0f;
+            game.add_player(recvline, new_player);
+            /
         }
-        //讀 ID
-        //name in recvline
-        n = Read(connfd, recvline[index], MAXLINE);
-        //放入 vector
-        Player new_player;
-        new_player.sockfd = connfd;
-        new_player.mode = "map";
-        new_player.x = 0.0f;
-        new_player.y = 0.0f;
-        game.add_player(recvline, new_player);
-        //fork
-        if ( (childpid = Fork()) == 0) {
-            Close(listenfd);
-            //handle_client
-            game.handle_client(connfd, recvline);
-            exit(0);
-        }
-        close(connfd);
+
+
+
     }
 
     return 0;
