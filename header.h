@@ -10,6 +10,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
+#include <sys/wait.h>
+#include <unordered_map>
 #define MAPMODE     0
 #define CHATMODE    1
 #define REQMODE     2

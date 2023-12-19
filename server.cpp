@@ -10,9 +10,6 @@ void sig_chld(int signo){
     return;
 }
 
-
-
-
 // Game::handle_client(int sockfd, char* name){
 //     int n;
 //     char buffer[MAXLINE], sendline[MAXLINE];
