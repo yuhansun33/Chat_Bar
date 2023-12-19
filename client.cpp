@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <SFML/Graphics.hpp>
+using namespace std;
 
 struct Player {
     float x;
@@ -12,7 +13,7 @@ struct Player {
 int main() {
     int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (clientSocket == -1) {
-        std::cerr << "Error creating client socket" << std::endl;
+        cerr << "Error creating client socket" << endl;
         return -1;
     }
 
@@ -23,12 +24,12 @@ int main() {
     serverAddress.sin_port = htons(53000);
 
     if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
-        std::cerr << "Error connecting to the server" << std::endl;
+        cerr << "Error connecting to the server" << endl;
         close(clientSocket);
         return -1;
     }
 
-    std::cout << "Connected to the server" << std::endl;
+    cout << "Connected to the server" << endl;
 
     Player player;
     player.x = 0.0f;
