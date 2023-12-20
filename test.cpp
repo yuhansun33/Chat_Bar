@@ -9,12 +9,14 @@ int main() {
     TCPdata.serverIPPort(SERVERIP, GAMEPORT);
 
     // 給伺服器發送自己的名字
-    char* name;
+    std::string name;
     std::cout << "請輸入你的名字: ";
-    std::cin >> name;
+    std::getline(std::cin, name); // 使用getline来读取整行
+    // 使用name.c_str()来获取C风格字符串
+
     Packet packet;
     packet.mode_packet = MAPMODE;
-    strcpy(packet.sender_name, name);
+    strncpy(packet.sender_name, name.c_str(), NAMELINE);
     packet.x_packet = 0;
     packet.y_packet = 0;
     TCPdata.sendData(packet);
