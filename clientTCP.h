@@ -7,6 +7,8 @@ class ClientConnectToServer {
     private:
         int socketfd;
         struct sockaddr_in serverAddr;
+        std::string serializer(Packet& packet);
+        Packet deserializer(std::string& json_string);
     public:
         ClientConnectToServer();
         ~ClientConnectToServer();

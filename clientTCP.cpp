@@ -22,16 +22,34 @@ void ClientConnectToServer::serverIPPort(const char* serverIP, int port) {
     }
 }
 
-void ClientConnectToServer::sendData(Packet& packet) {
+std::string ClientConnectToServer::serializer(Packet& packet) {
     std::string data = packet.packet_to_json().dump();
-    // 接下來，使用 socket 發送 data 字串
+    return data;
+}
+
+Packet ClientConnectToServer::deserializer(std::string& json_string) {
+    Packet packet;
+    json j = json::parse(json_string);
+    packet = packet.json_to_packet(j);
+    return packet;
+}
+
+void ClientConnectToServer::sendData(Packet& packet) {
+    std::string data = serializer(packet);
+    if (send(socketfd, data.c_str(), data.size(), 0) == -1) {
+        perror("Failed to send data");
+    }
 }
 
 Packet ClientConnectToServer::receiveData() {
-    std::string data;
-    Packet P;
-    json j = json::parse(data);
-    P = P.json_to_packet(j);
+    char buffer[MAXLINE];
+    bzero(buffer, MAXLINE);
+    if (recv(socketfd, buffer, MAXLINE, 0) == -1) {
+        perror("Failed to receive data");
+    }
+    std::string data = buffer;
+    Packet packet = deserializer(data);
+    return packet;
 }
 
 
