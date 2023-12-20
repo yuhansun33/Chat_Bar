@@ -116,7 +116,7 @@ int main() {
             new_player.mode_player = MAPMODE;
             new_player.x_player = packet.x_packet;
             new_player.y_player = packet.y_packet;
-            // packet.sender_name[sizeof(packet.sender_name) - 1] = '\0';
+            packet.sender_name[sizeof(packet.sender_name) - 1] = '\0';
             cout << "new player: " << packet.sender_name << endl;
             cout << "(x, y) : (" << packet.x_packet << ", " << packet.y_packet << ")" << endl;
             game.add_player(packet.sender_name, new_player);

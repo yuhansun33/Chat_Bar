@@ -22,7 +22,6 @@ int main() {
     packet.x_packet = 0;
     packet.y_packet = 0;
     TCPdata.sendData(packet);
-
     // 接收伺服器發送的其他玩家的名字
 
 
