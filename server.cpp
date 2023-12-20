@@ -68,7 +68,7 @@ int main() {
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family      = AF_INET;
 	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servaddr.sin_port        = htons(11130);
+	servaddr.sin_port        = htons(GAMEPORT);
 
     bind(listenfd, (SA *) &servaddr, sizeof(servaddr));
     listen(listenfd, LISTENQ);
@@ -89,17 +89,19 @@ int main() {
             clilen = sizeof(cliaddr);
             //accept
             if ( (connfd = accept(listenfd, (SA *) &cliaddr, &clilen)) < 0) {
-                if (errno == EINTR)
-                        continue;
-                else
+                if (errno == EINTR){
+                    continue;
+                }else{
                     perror("accept error");
-                    return;
+                }
             }
             //送所有人位置
             for (auto& player : game.get_players_map()){
                 Packet packet;
                 packet.mode_packet = MAPMODE;
-                packet.sender_name = player.first;
+                // packet.sender_name = player.first;
+                strncpy(packet.sender_name, player.first, sizeof(packet.sender_name) - 1);
+                packet.sender_name[sizeof(packet.sender_name) - 1] = '\0';
                 packet.x_packet = player.second.x_player;
                 packet.y_packet = player.second.y_player;
                 game.sendData(packet, connfd);

@@ -17,6 +17,7 @@ login: login.cpp
 	$(CC) $(CFLAGS) $< -o $@ $(SFML_LIBS)
 
 server: server.cpp
+	$(CC) $(CFLAGS) $< -o $@ $(SFML_LIBS)
 
 
 clean:
