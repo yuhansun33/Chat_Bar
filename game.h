@@ -8,8 +8,10 @@ public:
     void add_player(char* name, struct Player new_player);
     void remove_player(char* name);
     int  get_player_size();
-    void serialize(Packet packet, char* buffer);
-    void deserialize(Packet packet, char* buffer);
+    std::string serialize(Packet packet);
+    Packet deserialize(std::string& json_string);
+    void sendData(Packet packet, int sockfd);
+    Packet receiveData(int sockfd);
     void broadcast_xy(Packet packet, int sockfd);
     void handle_client(int sockfd);
     unordered_map<const char*, struct Player> get_players_map();

@@ -19,7 +19,7 @@
 #define MAPMODE     0
 #define CHATMODE    1
 #define REQMODE     2
-#define NAMEMODE    3
+#define INITMODE    3
 
 #define GAMEPORT    11130
 #define NAMELINE    64
