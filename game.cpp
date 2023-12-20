@@ -17,12 +17,16 @@ Packet Game::deserialize(std::string& json_string){
 }
 void Game::sendData(Packet packet, int sockfd){
     std::string data = serialize(packet);
-    write(sockfd, data.c_str(), data.size());
+    if (send(sockfd, data.c_str(), data.size(), 0) == -1) {
+        perror("Failed to send data");
+    }
 }
 Packet Game::receiveData(int sockfd){
     char buffer[MAXLINE];
     bzero(buffer, MAXLINE);
-    read(sockfd, buffer, MAXLINE);
+    if (recv(sockfd, buffer, MAXLINE, 0) == -1) {
+        perror("Failed to receive data");
+    }
     std::string data = buffer;
     Packet packet = deserialize(data);
     return packet;
