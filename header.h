@@ -19,7 +19,10 @@
 #define MAPMODE     0
 #define CHATMODE    1
 #define REQMODE     2
+#define NAMEMODE    4
+
 #define GAMEPORT    11130
+#define NAMELINE    64
 #define MAXLINE     4096
 #define LISTENQ     1024
 #define SA          struct sockaddr
