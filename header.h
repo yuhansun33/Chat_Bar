@@ -28,6 +28,7 @@
 #define INITMODE    3
 
 #define GAMEPORT    11130
+#define LOGINPORT   11131
 #define NAMELINE    128
 #define MAXLINE     4096
 #define LISTENQ     1024

@@ -56,8 +56,9 @@ int main() {
                         typingUsername = false;
                     } else if (loginButton.getGlobalBounds().contains(mousePos)) {
                         std::cout << "Username: " << username << "\nPassword: " << password << std::endl;
-
-                        // 在這裡處理登入邏輯
+                        username.clear();
+                        password.clear();
+                        
                     }
                 }
             }
@@ -65,7 +66,12 @@ int main() {
                 if (event.key.code == sf::Keyboard::Enter) {
                     // Enter 鍵被按下
                     std::cout << "Username: " << username << "\nPassword: " << password << std::endl;
+                    
                     // 在這裡處理登入邏輯
+
+                    // 清空 username 和 password
+                    username.clear();
+                    password.clear();
                 }
             }
             // 處理鍵盤輸入
@@ -73,13 +79,13 @@ int main() {
                 if (typingUsername) {
                     if (event.text.unicode == '\b' && !username.empty()) { // Backspace
                         username.pop_back();
-                    } else if (event.text.unicode < 128) {
+                    } else if (event.text.unicode >= 32 && event.text.unicode <= 126) {
                         username += static_cast<char>(event.text.unicode);
                     }
                 } else if (typingPassword) {
                     if (event.text.unicode == '\b' && !password.empty()) { // Backspace
                         password.pop_back();
-                    } else if (event.text.unicode < 128) {
+                    } else if (event.text.unicode >= 32 && event.text.unicode <= 126) {
                         password += static_cast<char>(event.text.unicode);
                     }
                 }

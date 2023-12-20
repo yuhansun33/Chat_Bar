@@ -16,13 +16,18 @@ int main() {
 
 
     // 建立視窗
-    sf::RenderWindow window(sf::VideoMode(500, 500), "聊Bar");
+    sf::RenderWindow window(sf::VideoMode(500, 500), "Chat Bar");
     window.setFramerateLimit(60);
 
     // 加載地圖和角色的紋理
     sf::Texture mapTexture, characterTexture;
     if (!mapTexture.loadFromFile("Assets/Pictures/map.png") || !characterTexture.loadFromFile("Assets/Pictures/boy.png")) {
         perror("圖片加載失敗");
+        return -1;
+    }
+    sf::Font font;
+    if (!font.loadFromFile("Assets/Fonts/login_font.ttf")) {
+        perror("字體加載失敗");
         return -1;
     }
 
@@ -59,7 +64,9 @@ int main() {
     sf::Sprite character(characterTexture);
     character.setScale(0.08f, 0.08f);
     character.setPosition(packet.x_packet, packet.y_packet);
-
+    sf::Text characterName(name, font, 20);
+    characterName.setFillColor(sf::Color::White);
+    characterName.setPosition(character.getPosition().x + 20, character.getPosition().y - 20);
 
     sf::View view(sf::FloatRect(0.f, 0.f, 800.f, 600.f));
     view.setCenter(character.getPosition());
@@ -106,8 +113,8 @@ int main() {
                 character.move(2.7f, 0);
                 Changed = true;
             }
-
         }
+        characterName.setPosition(character.getPosition().x + 20, character.getPosition().y - 20);
 
         // 接收其他玩家的位置
         while(true){
@@ -143,6 +150,7 @@ int main() {
         window.clear();
         window.draw(mapSprite);
         window.draw(character);
+        window.draw(characterName);
 
         // 繪製其他玩家
         // 渲染
