@@ -16,7 +16,9 @@ int main() {
 
     Packet packet;
     packet.mode_packet = MAPMODE;
-    strncpy(packet.sender_name, name.c_str(), NAMELINE);
+    memset(packet.sender_name, 0, NAMELINE);
+    strncpy(packet.sender_name, name.c_str(), NAMELINE-1);
+    packet.sender_name[NAMELINE] = '\0';
     packet.x_packet = 0;
     packet.y_packet = 0;
     TCPdata.sendData(packet);

@@ -22,7 +22,7 @@
 #define INITMODE    3
 
 #define GAMEPORT    11130
-#define NAMELINE    128
+#define NAMELINE    1024
 #define MAXLINE     4096
 #define LISTENQ     1024
 #define SA          struct sockaddr
