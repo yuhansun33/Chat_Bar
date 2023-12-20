@@ -25,8 +25,14 @@ int main() {
         return -1;
     }
 
+    Packet rp = TCPdata.receiveData();
+    int otherCharactersSize = 0;
+    if (rp.mode_packet == INITMODE) {
+        otherCharactersSize = (int)rp.x_packet;
+    }
+
     std::unordered_map<char*, sf::Sprite> otherCharacters;
-    while(true) {
+    for(int i = 0; i < otherCharactersSize; i++) {
         Packet packet = TCPdata.receiveData();
         if (packet.mode_packet == MAPMODE) {
             sf::Sprite otherCharacter(characterTexture);
