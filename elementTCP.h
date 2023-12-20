@@ -19,6 +19,8 @@ struct Packet{
 };
 
 struct Player{
+	Player(){};
+	Player(int sockfd, int mode, float x, float y);
 	int sockfd;
     int mode_player; //MAP , CHAT
 	float x_player;

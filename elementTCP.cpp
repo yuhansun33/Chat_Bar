@@ -45,3 +45,9 @@ Packet Packet::json_to_packet(json& j) {
 
 }
 
+Player::Player(int sockfd, int mode, float x, float y){
+    sockfd = sockfd;
+    mode_player = mode;
+    x_player = x;
+    y_player = y;
+}
