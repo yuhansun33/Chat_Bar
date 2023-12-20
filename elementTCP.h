@@ -9,8 +9,8 @@ struct Packet{
 	json packet_to_json();
 	Packet json_to_packet(json& json_packet);
 	int mode_packet; //MAP, REQUEST, CHAT
-	char sender_name[MAXLINE]; //sender name
-    char receiver_name[MAXLINE]; //receiver name
+	char sender_name[NAMELINE]; //sender name
+    char receiver_name[NAMELINE]; //receiver name
 	float x_packet;
 	float y_packet;
 	char message[MAXLINE];

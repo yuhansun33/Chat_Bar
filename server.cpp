@@ -111,7 +111,7 @@ int main() {
         }
         //看每個 client
         int num_players = game.get_player_size();
-        for (const auto& player : game.players){
+        for (const auto& player : game.get_players_map() ){
             sockfd = player.second.sockfd;
             if(FD_ISSET(sockfd, &rset)){
                 //handle_client

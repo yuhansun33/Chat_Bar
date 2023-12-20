@@ -12,6 +12,7 @@ public:
     void deserialize(Packet packet, char* buffer);
     void broadcast_xy(Packet packet, int sockfd);
     void handle_client(int sockfd);
+    unordered_map<const char*, struct Player> get_players_map();
 private:
     unordered_map<const char*, struct Player> players;
 };
