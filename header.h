@@ -7,6 +7,7 @@
 #include <string.h>
 #include <signal.h>
 #include <stdexcept> 
+#include <sys/wait.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -14,7 +15,6 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 #include <nlohmann/json.hpp>
-#include <sys/wait.h>
 
 #define MAXMODE     0
 #define CHATMODE    1
