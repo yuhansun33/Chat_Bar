@@ -97,42 +97,35 @@ int main() {
             }
             //送所有人位置
             for (auto& player : game.get_players_map()){
-                Packet packet;
-                packet.mode_packet = MAPMODE;
-                // packet.sender_name = player.first;
-                strncpy(packet.sender_name, player.first, sizeof(packet.sender_name) - 1);
-                packet.sender_name[sizeof(packet.sender_name) - 1] = '\0';
-                packet.x_packet = player.second.x_player;
-                packet.y_packet = player.second.y_player;
+                Packet packet(MAPMODE, player.first, "", player.second.x_player, player.second.y_player, "");
                 game.sendData(packet, connfd);
             }
             //讀 ID
             //name in recvline
             Packet packet = game.receiveData(connfd);
-            cout<<"here\n";
             //放入 vector
-            Player new_player;
-            new_player.sockfd = connfd;
-            new_player.mode_player = MAPMODE;
-            new_player.x_player = packet.x_packet;
-            new_player.y_player = packet.y_packet;
-            packet.sender_name[sizeof(packet.sender_name) - 1] = '\0';
+            Player new_player(connfd, MAPMODE, packet.x_packet, packet.y_packet);
+            game.add_player(packet.sender_name, new_player);
+            
             cout << "new player: " << packet.sender_name << endl;
             cout << "(x, y) : (" << packet.x_packet << ", " << packet.y_packet << ")" << endl;
-            game.add_player(packet.sender_name, new_player);
 
             FD_SET(connfd, &allset);
             if(connfd > maxfd) maxfd = connfd;
         }
         //看每個 client
-        // int num_players = game.get_player_size();
-        // for (const auto& player : game.get_players_map() ){
-        //     sockfd = player.second.sockfd;
-        //     if(FD_ISSET(sockfd, &rset)){
-        //         //handle_client
-                
-        //     }
-        // }
+        for (const auto& player : game.get_players_map() ){
+            sockfd = player.second.sockfd;
+            if(FD_ISSET(sockfd, &rset)){
+                //handle_client
+                Packet packet = game.receiveData(sockfd);
+                if(packet.mode_packet == MAPMODE){
+                    //map mode
+                    Packet new_packet(MAPMODE, packet.sender_name, "", packet.x_packet, packet.y_packet, "");
+                    game.broadcast_xy(new_packet, sockfd);
+                }
+            }
+        }
 
 
     }

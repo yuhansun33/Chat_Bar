@@ -36,8 +36,7 @@ void Game::broadcast_xy(Packet packet, int sockfd){
     for (auto& player : players){
         if(player.second.sockfd != sockfd){
             //send
-            serialize(packet);
-            write(player.second.sockfd, buffer, sizeof(Packet));
+            sendData(packet, player.second.sockfd);
         }
     }
 }
