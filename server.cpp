@@ -99,9 +99,7 @@ int main() {
             Packet init_packet(INITMODE, "", "", (float)game.get_player_size(), 0, "");
             game.sendData(init_packet, connfd);
             //送所有人位置
-            // unordered_map<char*, Player> players_map = game.get_players_map();
             for (auto& player : game.get_players_map()){
-                // string player_name(player.first);
                 Packet packet(MAPMODE, player.first, "", player.second.x_player, player.second.y_player, "");
                 game.sendData(packet, connfd);
             }
@@ -114,7 +112,6 @@ int main() {
             Player new_player(connfd, MAPMODE, packet.x_packet, packet.y_packet);
             cout << "after new player" << endl;
             game.add_player(packet.sender_name, new_player);
-            cout << "after add player" << endl;
             
             cout << "new player: " << packet.sender_name << " ";
             cout << "(x, y) : (" << packet.x_packet << ", " << packet.y_packet << ")" << " ";
