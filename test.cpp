@@ -1,12 +1,26 @@
 #include "header.h"
 #include "clientTCP.h"
-#include "elementTCP.h"
+
 
 
 int main() {
     // 建立與伺服器的連接
     ClientConnectToServer TCPdata;
     TCPdata.serverIPPort(SERVERIP, GAMEPORT);
+
+    // 給伺服器發送自己的名字
+    char* name;
+    std::cout << "請輸入你的名字: ";
+    std::cin >> name;
+    Packet packet;
+    packet.mode_packet = MAPMODE;
+    strcpy(packet.sender_name, name);
+    packet.x_packet = 0;
+    packet.y_packet = 0;
+    TCPdata.sendData(packet);
+
+    // 接收伺服器發送的其他玩家的名字
+
 
     // 建立視窗
     sf::RenderWindow window(sf::VideoMode(500, 500), "聊Bar");
@@ -25,11 +39,12 @@ int main() {
     // 設置主角
     sf::Sprite character(characterTexture);
     character.setScale(0.08f, 0.08f);
+    character.setPosition(packet.x_packet, packet.y_packet);
 
     // 假設從伺服器接收到的其他角色位置數據
-    std::vector<Player> otherPlayers = {
+    // std::vector<Player> otherPlayers = {
         
-    };
+    // };
 
     sf::View view(sf::FloatRect(0.f, 0.f, 800.f, 600.f));
     view.setCenter(character.getPosition());
