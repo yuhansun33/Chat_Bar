@@ -35,7 +35,11 @@ json Packet::packet_to_json() {
 Packet Packet::json_to_packet(json& j) {
     Packet p;
     // 進行賦值
-    p.mode_packet = j["mode_packet"];
+    try {
+        p.mode_packet = j["mode_packet"];
+    } catch (const json::exception& e) {
+        std::cerr <<  "mode_packet 反序列化出錯了！: " << e.what() << std::endl;
+    }
     try {
         strcpy(p.sender_name, j["sender_name"].get<std::string>().c_str());
     } catch (const json::exception& e) {
@@ -46,15 +50,22 @@ Packet Packet::json_to_packet(json& j) {
     } catch (const json::exception& e) {
         std::cerr <<  "recvname 反序列化出錯了！: " << e.what() << std::endl;
     }
-    p.x_packet = j["x_packet"];
-    p.y_packet = j["y_packet"];
+    try {
+        p.x_packet = j["x_packet"];
+    } catch (const json::exception& e) {
+        std::cerr <<  "x_packet 反序列化出錯了！: " << e.what() << std::endl;
+    }
+    try {
+        p.y_packet = j["y_packet"];
+    } catch (const json::exception& e) {
+        std::cerr <<  "y_packet 反序列化出錯了！: " << e.what() << std::endl;
+    }
     try {
         strcpy(p.message, j["message"].get<std::string>().c_str());
     } catch (const json::exception& e) {
         std::cerr <<  "message 反序列化出錯了！: " << e.what() << std::endl;
     }
     return p;
-
 }
 
 Player::Player(int new_sockfd, int mode, float x, float y){

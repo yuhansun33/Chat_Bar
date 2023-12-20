@@ -2,12 +2,15 @@
 #define header_h
 
 #include <vector>
+#include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
 #include <stdexcept> 
 #include <sys/wait.h>
+#include <sys/types.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -15,6 +18,7 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 #include <nlohmann/json.hpp>
+
 
 #define MAPMODE     0
 #define CHATMODE    1

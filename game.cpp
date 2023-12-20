@@ -1,6 +1,6 @@
 #include "elementTCP.h"
 #include "game.h"
-
+#include "readline.h"
 
 void Game::add_player(char* name, struct Player new_player){
     std::string name_str(name);
@@ -20,6 +20,7 @@ Packet Game::deserialize(std::string& json_string){
 }
 void Game::sendData(Packet packet, int sockfd){
     std::string data = serialize(packet);
+    data += "\n";
     if (send(sockfd, data.c_str(), data.size(), 0) == -1) {
         perror("Failed to send data");
     }
@@ -27,7 +28,7 @@ void Game::sendData(Packet packet, int sockfd){
 Packet Game::receiveData(int sockfd){
     char buffer[MAXLINE];
     bzero(buffer, MAXLINE);
-    int n = recv(sockfd, buffer, MAXLINE, 0);
+    int n = Readline(sockfd, buffer, MAXLINE);
     if (n == -1) {
         std::cout << "(server) Failed to receive data" << std::endl;
         perror("Failed to receive data");

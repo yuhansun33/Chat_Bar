@@ -1,5 +1,6 @@
 #include "clientTCP.h"
 #include "elementTCP.h"
+#include "readline.h"
 
 ClientConnectToServer::ClientConnectToServer() {
     socketfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -30,12 +31,13 @@ std::string ClientConnectToServer::serializer(Packet& packet) {
 Packet ClientConnectToServer::deserializer(std::string& json_string) {
     Packet packet;
     json j = json::parse(json_string);
-    packet = packet.json_to_packet(j);
-    return packet;
+    Packet packet2 = packet.json_to_packet(j);
+    return packet2;
 }
 
 void ClientConnectToServer::sendData(Packet& packet) {
     std::string data = serializer(packet);
+    data += "\n";
     if (send(socketfd, data.c_str(), data.size(), 0) == -1) {
         perror("Failed to send data");
     }
@@ -44,7 +46,7 @@ void ClientConnectToServer::sendData(Packet& packet) {
 Packet ClientConnectToServer::receiveData() {
     char buffer[MAXLINE];
     bzero(buffer, MAXLINE);
-    int returncode = recv(socketfd, buffer, MAXLINE, 0);
+    int returncode = readline(socketfd, buffer, MAXLINE);
     if ( returncode == -1) {
         perror("Failed to receive data");
     }else if(returncode == 0){
@@ -53,8 +55,11 @@ Packet ClientConnectToServer::receiveData() {
         exit(0);
     }
     std::string data = buffer;
-    Packet packet = deserializer(data);
-    return packet;
+    try {
+        Packet packet = deserializer(data);
+        return packet;
+    } catch (const json::exception& e) {
+        std::cerr << "packet 反序列化出錯了！: " << e.what() << std::endl;
+        return Packet{};
+    }
 }
-
-
