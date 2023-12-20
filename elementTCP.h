@@ -6,7 +6,7 @@
 using json = nlohmann::json;
 
 struct Packet{
-	Packet(){};
+	Packet(){mode_packet = EMPTYMODE;};
 	Packet(int mode, std::string sendstr = NULL, std::string recvstr = NULL, float x = 0, float y = 0, std::string msg = NULL);
 	json packet_to_json();
 	Packet json_to_packet(json& json_packet);

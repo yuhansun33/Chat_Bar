@@ -85,7 +85,7 @@ Packet ClientConnectToServer::receiveDataNonBlock() {
     int returncode = readline(socketfd, buffer, MAXLINE);
     if (returncode == -1) {
         if(errno == EAGAIN || errno == EWOULDBLOCK){
-            return Packet{};
+            return Packet();
         }
         perror("Failed to receive data");
     }else if(returncode == 0){

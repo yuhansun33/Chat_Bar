@@ -110,24 +110,32 @@ int main() {
         }
 
         // 接收其他玩家的位置
-        // while(true){
-        //     Packet packet = TCPdata.receiveData();
-        //     if (packet.mode_packet == MAPMODE) {
-        //         if (otherCharacters.find(packet.sender_name) == otherCharacters.end()) {
-        //             sf::Sprite otherCharacter(characterTexture);
-        //             otherCharacter.setScale(0.08f, 0.08f);
-        //             otherCharacter.setPosition(packet.x_packet, packet.y_packet);
-        //             otherCharacters[packet.sender_name] = otherCharacter;
-        //         } else {
-        //             otherCharacters[packet.sender_name].setPosition(packet.x_packet, packet.y_packet);
-        //         }   
-        //     }
-        // }
+        while(true){
+            Packet packet = TCPdata.receiveDataNonBlock();
+            if (packet.mode_packet == EMPTYMODE) {
+                std::cout << "break" << std::endl;
+                break;
+            }
+            if (packet.mode_packet == MAPMODE) {
+                std::cout << "packet.sender_name: " << packet.sender_name << std::endl;
+                std::cout << "packet.x_packet: " << packet.x_packet << std::endl;
+                std::cout << "packet.y_packet: " << packet.y_packet << std::endl;
+                
+                if (otherCharacters.find(packet.sender_name) == otherCharacters.end()) {
+                    sf::Sprite otherCharacter(characterTexture);
+                    otherCharacter.setScale(0.08f, 0.08f);
+                    otherCharacter.setPosition(packet.x_packet, packet.y_packet);
+                    otherCharacters[packet.sender_name] = otherCharacter;
+                } else {
+                    otherCharacters[packet.sender_name].setPosition(packet.x_packet, packet.y_packet);
+                }   
+            }
+        }
 
-        // // 渲染
-        // for(auto& otherCharacter : otherCharacters) {
-        //     window.draw(otherCharacter.second);
-        // })
+        // 渲染
+        for(auto& otherCharacter : otherCharacters) {
+            window.draw(otherCharacter.second);
+        }
 
         if (Changed) {
             Packet packet(MAPMODE, name, "", character.getPosition().x, character.getPosition().y, "");

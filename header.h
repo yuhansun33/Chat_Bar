@@ -21,6 +21,7 @@
 #include <nlohmann/json.hpp>
 
 
+#define EMPTYMODE   -1
 #define MAPMODE     0
 #define CHATMODE    1
 #define REQMODE     2
