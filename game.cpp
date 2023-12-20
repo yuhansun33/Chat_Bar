@@ -3,7 +3,7 @@
 
 
 void Game::add_player(char* name, struct Player new_player){
-    
+
     std::cout << "player name: " << name << std::endl;
     std::cout << "player sockfd: " << new_player.sockfd << std::endl;
     players[name] = new_player;
@@ -31,6 +31,10 @@ Packet Game::receiveData(int sockfd){
     bzero(buffer, MAXLINE);
     if (recv(sockfd, buffer, MAXLINE, 0) == -1) {
         perror("Failed to receive data");
+    }else if(recv(sockfd, buffer, MAXLINE, 0) == 0){
+        std::cout << "client disconnected" << std::endl;
+        close(sockfd);
+        exit(0);
     }
     std::string data = buffer;
     Packet packet = deserialize(data);
