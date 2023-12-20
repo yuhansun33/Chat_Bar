@@ -4,6 +4,7 @@
 
 ClientConnectToServer::ClientConnectToServer() {
     socketfd = socket(AF_INET, SOCK_STREAM, 0);
+    flag = fcntl(socketfd, F_GETFL, 0);
     if (socketfd < 0) {
         perror("Failed to create socket");
     }
@@ -63,3 +64,42 @@ Packet ClientConnectToServer::receiveData() {
         return Packet{};
     }
 }
+
+void ClientConnectToServer::turnOnNonBlock() {
+    flag |= O_NONBLOCK;
+    if(fcntl(socketfd, F_SETFL, flag) < 0) {
+        perror("fcntl F_SETFL error");
+    }
+}
+
+void ClientConnectToServer::turnOffNonBlock() {
+    flag &= ~O_NONBLOCK;
+    if(fcntl(socketfd, F_SETFL, flag) < 0) {
+        perror("fcntl F_SETFL error");
+    }
+}
+
+Packet ClientConnectToServer::receiveDataNonBlock() {
+    char buffer[MAXLINE];
+    bzero(buffer, MAXLINE);
+    int returncode = readline(socketfd, buffer, MAXLINE);
+    if (returncode == -1) {
+        if(errno == EAGAIN || errno == EWOULDBLOCK){
+            return Packet{};
+        }
+        perror("Failed to receive data");
+    }else if(returncode == 0){
+        std::cout << "server disconnected" << std::endl;
+        close(socketfd);
+        exit(0);
+    }
+    std::string data = buffer;
+    try {
+        Packet packet = deserializer(data);
+        return packet;
+    } catch (const json::exception& e) {
+        std::cerr << "packet 反序列化出錯了！: " << e.what() << std::endl;
+        return Packet{};
+    }
+}
+

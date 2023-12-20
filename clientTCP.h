@@ -6,6 +6,7 @@
 class ClientConnectToServer {
     private:
         int socketfd;
+        int flag;
         struct sockaddr_in serverAddr;
         std::string serializer(Packet& packet);
         Packet deserializer(std::string& json_string);
@@ -14,7 +15,10 @@ class ClientConnectToServer {
         ~ClientConnectToServer();
         void serverIPPort(const char* serverIP, int port);
         void sendData(Packet& data);
+        void turnOnNonBlock();
+        void turnOffNonBlock();
         Packet receiveData();
+        Packet receiveDataNonBlock();
 };
 
 #endif 

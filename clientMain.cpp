@@ -17,6 +17,7 @@ int main() {
 
     // 建立視窗
     sf::RenderWindow window(sf::VideoMode(500, 500), "聊Bar");
+    window.setFramerateLimit(60);
 
     // 加載地圖和角色的紋理
     sf::Texture mapTexture, characterTexture;
@@ -62,6 +63,7 @@ int main() {
 
     sf::View view(sf::FloatRect(0.f, 0.f, 800.f, 600.f));
     view.setCenter(character.getPosition());
+    TCPdata.turnOnNonBlock();
 
     // 遊戲主循環
     while (window.isOpen()) {
@@ -85,22 +87,23 @@ int main() {
 
         // 更新主角的位置
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-            character.move(0, -0.07f);
+            character.move(0, -2.7f);
             Changed = true;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-            character.move(-0.07f, 0);
+            character.move(-2.7f, 0);
             Changed = true;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-            character.move(0, 0.07f);
+            character.move(0, 2.7f);
             Changed = true;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-            character.move(0.07f, 0);
+            character.move(2.7f, 0);
             Changed = true;
         }
 
+        // 接收其他玩家的位置
         // while(true){
         //     Packet packet = TCPdata.receiveData();
         //     if (packet.mode_packet == MAPMODE) {
@@ -119,6 +122,7 @@ int main() {
         // for(auto& otherCharacter : otherCharacters) {
         //     window.draw(otherCharacter.second);
         // })
+
         if (Changed) {
             Packet packet(MAPMODE, name, "", character.getPosition().x, character.getPosition().y, "");
             TCPdata.sendData(packet);
