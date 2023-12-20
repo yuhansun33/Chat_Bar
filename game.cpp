@@ -50,3 +50,13 @@ void Game::broadcast_xy(Packet packet, int sockfd){
     }
 }
 std::unordered_map<std::string, struct Player> Game::get_players_map(){ return players; }
+void Game::show_players(){
+    std::cout << "name\tsockfd\tmode\tx\ty" << std::endl;
+    for (auto& player : players){
+        std::cout << player.first << "\t";
+        std::cout << player.second.sockfd << "\t";
+        std::cout << player.second.mode_player << "\t";
+        std::cout << player.second.x_player << "\t";
+        std::cout << player.second.y_player << std::endl;
+    }
+}
