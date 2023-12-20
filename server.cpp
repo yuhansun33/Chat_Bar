@@ -118,7 +118,7 @@ int main() {
         //看每個 client
         for (const auto& player : game.get_players_map() ){
             sockfd = player.second.sockfd;
-            cout << "2)sockfd: " << player.second.sockfd << "player name: " << player.first << endl;
+            cout << "2)sockfd: " << sockfd << "player name: " << player.first << endl;
             if(FD_ISSET(sockfd, &rset)){
                 //handle_client
                 cout << "handle client" << endl;

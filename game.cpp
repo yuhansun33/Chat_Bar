@@ -3,6 +3,7 @@
 
 
 void Game::add_player(char* name, struct Player new_player){
+    
     std::cout << "player name: " << name << std::endl;
     std::cout << "player sockfd: " << new_player.sockfd << std::endl;
     players[name] = new_player;
