@@ -4,7 +4,7 @@
 #include "elementTCP.h"
 class Game{
 public:
-    Game();
+    Game(){};
     void add_player(char* name, struct Player new_player);
     void remove_player(char* name);
     int  get_player_size();
