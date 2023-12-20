@@ -13,7 +13,7 @@ int main() {
     std::cout << "請輸入你的名字: ";
     std::getline(std::cin, name); 
     Packet packet(MAPMODE, name, "", 0, 0, "");
-    packet.mode_packet = MAPMODE;
+
 
     // 建立視窗
     sf::RenderWindow window(sf::VideoMode(500, 500), "聊Bar");
@@ -25,17 +25,17 @@ int main() {
         return -1;
     }
 
-    // 接收伺服器發送的其他玩家的名字
-    std::unordered_map<char*, sf::Sprite> otherCharacters;
-    while(true) {
-        Packet packet = TCPdata.receiveData();
-        if (packet.mode_packet == MAPMODE) {
-            sf::Sprite otherCharacter(characterTexture);
-            otherCharacter.setScale(0.08f, 0.08f);
-            otherCharacter.setPosition(packet.x_packet, packet.y_packet);
-            otherCharacters[packet.sender_name] = otherCharacter;
-        }
-    }
+    // // 接收伺服器發送的其他玩家的名字
+    // std::unordered_map<char*, sf::Sprite> otherCharacters;
+    // while(true) {
+    //     Packet packet = TCPdata.receiveData();
+    //     if (packet.mode_packet == MAPMODE) {
+    //         sf::Sprite otherCharacter(characterTexture);
+    //         otherCharacter.setScale(0.08f, 0.08f);
+    //         otherCharacter.setPosition(packet.x_packet, packet.y_packet);
+    //         otherCharacters[packet.sender_name] = otherCharacter;
+    //     }
+    // }
 
     // 給伺服器發送自己的名字
     TCPdata.sendData(packet);
@@ -84,24 +84,27 @@ int main() {
             character.move(0.07f, 0);
         }
 
-        while(true){
-            Packet packet = TCPdata.receiveData();
-            if (packet.mode_packet == MAPMODE) {
-                if (otherCharacters.find(packet.sender_name) == otherCharacters.end()) {
-                    sf::Sprite otherCharacter(characterTexture);
-                    otherCharacter.setScale(0.08f, 0.08f);
-                    otherCharacter.setPosition(packet.x_packet, packet.y_packet);
-                    otherCharacters[packet.sender_name] = otherCharacter;
-                } else {
-                    otherCharacters[packet.sender_name].setPosition(packet.x_packet, packet.y_packet);
-                }   
-            }
-        }
+        // while(true){
+        //     Packet packet = TCPdata.receiveData();
+        //     if (packet.mode_packet == MAPMODE) {
+        //         if (otherCharacters.find(packet.sender_name) == otherCharacters.end()) {
+        //             sf::Sprite otherCharacter(characterTexture);
+        //             otherCharacter.setScale(0.08f, 0.08f);
+        //             otherCharacter.setPosition(packet.x_packet, packet.y_packet);
+        //             otherCharacters[packet.sender_name] = otherCharacter;
+        //         } else {
+        //             otherCharacters[packet.sender_name].setPosition(packet.x_packet, packet.y_packet);
+        //         }   
+        //     }
+        // }
 
-        // 渲染
-        for(auto& otherCharacter : otherCharacters) {
-            window.draw(otherCharacter.second);
-        }
+        // // 渲染
+        // for(auto& otherCharacter : otherCharacters) {
+        //     window.draw(otherCharacter.second);
+        // }
+        
+        Packet packet(MAPMODE, name, "", character.getPosition().x, character.getPosition().y, "");
+        TCPdata.sendData(packet);
 
         view.setCenter(character.getPosition());
         window.setView(view);
