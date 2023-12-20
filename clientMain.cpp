@@ -27,19 +27,22 @@ int main() {
 
     Packet rp = TCPdata.receiveData();
     int otherCharactersSize = 0;
+    std::cout << "test" << std::endl;
     if (rp.mode_packet == INITMODE) {
         otherCharactersSize = (int)rp.x_packet;
         std::cout << "otherCharactersSize: " << otherCharactersSize << std::endl;
     }
 
-    std::unordered_map<char*, sf::Sprite> otherCharacters;
+
+    std::unordered_map<std::string, sf::Sprite> otherCharacters;
     for(int i = 0; i < otherCharactersSize; i++) {
         Packet packet = TCPdata.receiveData();
         if (packet.mode_packet == MAPMODE) {
             sf::Sprite otherCharacter(characterTexture);
             otherCharacter.setScale(0.08f, 0.08f);
             otherCharacter.setPosition(packet.x_packet, packet.y_packet);
-            otherCharacters[packet.sender_name] = otherCharacter;
+            std::string othername = packet.sender_name;
+            otherCharacters[othername] = otherCharacter;
             std::cout << packet.sender_name << std::endl;
         }
     }
