@@ -44,8 +44,13 @@ void ClientConnectToServer::sendData(Packet& packet) {
 Packet ClientConnectToServer::receiveData() {
     char buffer[MAXLINE];
     bzero(buffer, MAXLINE);
-    if (recv(socketfd, buffer, MAXLINE, 0) == -1) {
+    int returncode = recv(socketfd, buffer, MAXLINE, 0);
+    if ( returncode == -1) {
         perror("Failed to receive data");
+    }else if(returncode == 0){
+        std::cout << "server disconnected" << std::endl;
+        close(socketfd);
+        exit(0);
     }
     std::string data = buffer;
     Packet packet = deserializer(data);
