@@ -95,6 +95,8 @@ int main() {
                     perror("accept error");
                 }
             }
+            //init packet
+            Packet init_packet(INITMODE, "", "", game.get_player_size(), 0, "");
             //送所有人位置
             for (auto& player : game.get_players_map()){
                 Packet packet(MAPMODE, player.first, "", player.second.x_player, player.second.y_player, "");
