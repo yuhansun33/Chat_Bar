@@ -14,9 +14,9 @@ public:
     Packet receiveData(int sockfd);
     void broadcast_xy(Packet packet, int sockfd);
     // void handle_client(int sockfd);
-    std::unordered_map<char*, struct Player> get_players_map();
+    std::unordered_map<std::string, struct Player> get_players_map();
 private:
-    std::unordered_map<char*, struct Player> players;
+    std::unordered_map<std::string, struct Player> players;
 };
 
 #endif

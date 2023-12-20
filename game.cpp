@@ -2,7 +2,10 @@
 #include "game.h"
 
 
-void Game::add_player(char* name, struct Player new_player){ players[name] = new_player; }
+void Game::add_player(char* name, struct Player new_player){
+    std::string name_str(name);
+    players[name_str] = new_player;
+}
 void Game::remove_player(char* name){ players.erase(name); }
 int  Game::get_player_size(){ return players.size(); }
 std::string Game::serialize(Packet packet){
@@ -46,4 +49,4 @@ void Game::broadcast_xy(Packet packet, int sockfd){
         }
     }
 }
-std::unordered_map<char*, struct Player> Game::get_players_map(){ return players; }
+std::unordered_map<std::string, struct Player> Game::get_players_map(){ return players; }

@@ -99,14 +99,17 @@ int main() {
             Packet init_packet(INITMODE, "", "", (float)game.get_player_size(), 0, "");
             game.sendData(init_packet, connfd);
             //送所有人位置
-            for (auto player : game.get_players_map()){
+            // unordered_map<char*, Player> players_map = game.get_players_map();
+            for (auto& player : game.get_players_map()){
                 cout << "21" << endl;
-                string player_name = player.first;
+                cout << "player name: " << player.first << endl;
+                cout << "player x: " << player.second.x_player << endl;
+                cout << "player y: " << player.second.y_player << endl;
+                string player_name(player.first);
                 Packet packet(MAPMODE, player_name, "", player.second.x_player, player.second.y_player, "");
                 cout << "22" << endl;
                 game.sendData(packet, connfd);
                 cout << "23" << endl;
-
             }
             //讀 ID
             //name in recvline
