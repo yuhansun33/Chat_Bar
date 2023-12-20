@@ -1,16 +1,21 @@
 #ifndef header_h
 #define header_h
-#include <SFML/Graphics.hpp>
-#include <SFML/Window.hpp>
-#include <iostream>
+
 #include <vector>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#include <iostream>
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
-#define MAPMODE     0
+#include <stdexcept> 
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unordered_map>
+#include <SFML/Window.hpp>
+#include <SFML/Graphics.hpp>
+#include <nlohmann/json.hpp>
+
+#define MAXMODE     0
 #define CHATMODE    1
 #define REQMODE     2
 #define GAMEPORT    11130
@@ -18,4 +23,5 @@
 #define LISTENQ     1024
 #define SA          struct sockaddr
 #define SERVERIP    "127.0.0.1"
+
 #endif

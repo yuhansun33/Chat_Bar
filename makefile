@@ -10,5 +10,14 @@ default: default.cpp
 client_move: client_move.cpp
 	$(CC) $(CFLAGS) $< -o $@ $(SFML_LIBS)
 
+test: test.cpp
+	$(CC) $(CFLAGS) $< -o $@ $(SFML_LIBS)
+
+login: login.cpp
+	$(CC) $(CFLAGS) $< -o $@ $(SFML_LIBS)
+
+server: server.cpp
+
+
 clean:
 	rm -f test

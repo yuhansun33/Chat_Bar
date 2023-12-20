@@ -1,23 +1,6 @@
-#include "header.h"
 #ifndef GAME_H
 #define GAME_H
-
-struct Packet{
-	int mode_packet; //MAP, REQUEST, CHAT
-	char sender_name[MAXLINE]; //sender name
-    char receiver_name[MAXLINE]; //receiver name
-	float x_packet;
-	float y_packet;
-	char message[MAXLINE];
-};
-
-struct Player{
-	int sockfd;
-    int mode_player; //MAP , CHAT
-	float x_player;
-	float y_player;
-};
-
+#include "header.h"
 class Game{
 public:
     Game();

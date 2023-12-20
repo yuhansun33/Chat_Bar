@@ -5,11 +5,6 @@
 #include <SFML/Graphics.hpp>
 using namespace std;
 
-struct Player {
-    float x;
-    float y;
-};
-
 int main() {
     int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (clientSocket == -1) {
