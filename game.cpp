@@ -2,7 +2,11 @@
 #include "game.h"
 
 
-void Game::add_player(char* name, struct Player new_player){ players[name] = new_player; }
+void Game::add_player(char* name, struct Player new_player){
+    std::cout << "player name: " << name << std::endl;
+    std::cout << "player sockfd: " << new_player.sockfd << std::endl;
+    players[name] = new_player;
+}
 void Game::remove_player(char* name){ players.erase(name); }
 int  Game::get_player_size(){ return players.size(); }
 std::string Game::serialize(Packet packet){

@@ -109,16 +109,21 @@ int main() {
             
             cout << "new player: " << packet.sender_name << endl;
             cout << "(x, y) : (" << packet.x_packet << ", " << packet.y_packet << ")" << endl;
+            cout << "1)sockfd: " << connfd << endl;
 
             FD_SET(connfd, &allset);
             if(connfd > maxfd) maxfd = connfd;
         }
+        cout << "player num : " << game.get_player_size() << endl;
         //看每個 client
         for (const auto& player : game.get_players_map() ){
             sockfd = player.second.sockfd;
+            cout << "2)sockfd: " << player.second.sockfd << "player name: " << player.first << endl;
             if(FD_ISSET(sockfd, &rset)){
                 //handle_client
+                cout << "handle client" << endl;
                 Packet packet = game.receiveData(sockfd);
+                cout << "sender: " << packet.sender_name << endl;
                 if(packet.mode_packet == MAPMODE){
                     //map mode
                     Packet new_packet(MAPMODE, packet.sender_name, "", packet.x_packet, packet.y_packet, "");
