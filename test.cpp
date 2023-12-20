@@ -55,11 +55,14 @@ int main() {
 
     // 遊戲主循環
     while (window.isOpen()) {
+        bool Changed = false;
+
         sf::Event event;
         while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed)
+            if (event.type == sf::Event::Closed) {
                 window.close();
-            // Handle window resize
+                Changed = true;
+            }
             if (event.type == sf::Event::Resized) {
                 float newWidth = static_cast<float>(event.size.width);
                 float newHeight = static_cast<float>(event.size.height);
@@ -73,15 +76,19 @@ int main() {
         // 更新主角的位置
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
             character.move(0, -0.07f);
+            Changed = true;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
             character.move(-0.07f, 0);
+            Changed = true;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
             character.move(0, 0.07f);
+            Changed = true;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
             character.move(0.07f, 0);
+            Changed = true;
         }
 
         // while(true){
@@ -101,10 +108,11 @@ int main() {
         // // 渲染
         // for(auto& otherCharacter : otherCharacters) {
         //     window.draw(otherCharacter.second);
-        // }
-        
-        Packet packet(MAPMODE, name, "", character.getPosition().x, character.getPosition().y, "");
-        TCPdata.sendData(packet);
+        // })
+        if (Changed) {
+            Packet packet(MAPMODE, name, "", character.getPosition().x, character.getPosition().y, "");
+            TCPdata.sendData(packet);
+        }
 
         view.setCenter(character.getPosition());
         window.setView(view);
