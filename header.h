@@ -16,7 +16,7 @@
 #include <SFML/Graphics.hpp>
 #include <nlohmann/json.hpp>
 
-#define MAXMODE     0
+#define MAPMODE     0
 #define CHATMODE    1
 #define REQMODE     2
 #define GAMEPORT    11130

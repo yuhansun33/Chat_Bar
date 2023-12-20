@@ -1,6 +1,7 @@
 #ifndef CLIENT_TCP_H
 #define CLIENT_TCP_H
 #include "header.h"
+#include "elementTCP.h"
 
 class ClientConnectToServer {
     private:
