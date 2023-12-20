@@ -96,12 +96,17 @@ int main() {
                 }
             }
             //init packet
-            Packet init_packet(INITMODE, "", "", game.get_player_size(), 0, "");
+            Packet init_packet(INITMODE, "", "", (float)game.get_player_size(), 0, "");
             game.sendData(init_packet, connfd);
             //送所有人位置
-            for (auto& player : game.get_players_map()){
-                Packet packet(MAPMODE, player.first, "", player.second.x_player, player.second.y_player, "");
+            for (auto player : game.get_players_map()){
+                cout << "21" << endl;
+                string player_name = player.first;
+                Packet packet(MAPMODE, player_name, "", player.second.x_player, player.second.y_player, "");
+                cout << "22" << endl;
                 game.sendData(packet, connfd);
+                cout << "23" << endl;
+
             }
             //讀 ID
             //name in recvline
@@ -117,7 +122,7 @@ int main() {
             FD_SET(connfd, &allset);
             if(connfd > maxfd) maxfd = connfd;
         }
-        cout << "player num : " << game.get_player_size() << endl;
+        cout << "player num : " << (float)game.get_player_size() << endl;
         //看每個 client
         for (const auto& player : game.get_players_map() ){
             sockfd = player.second.sockfd;
