@@ -95,29 +95,40 @@ int main() {
                     perror("accept error");
                     return;
             }
+            //送所有人位置
+            for (auto& player : game.get_players_map()){
+                Packet packet;
+                packet.mode_packet = MAPMODE;
+                packet.sender_name = player.first;
+                packet.x_packet = player.second.x_player;
+                packet.y_packet = player.second.y_player;
+                game.sendData(packet, connfd);
+            }
             //讀 ID
             //name in recvline
-            n = read(connfd, recvline, MAXLINE);
+            Packet packet = game.receiveData(connfd);
             //放入 vector
             Player new_player;
             new_player.sockfd = connfd;
             new_player.mode_player = MAPMODE;
-            new_player.x_player = 0.0f;
-            new_player.y_player = 0.0f;
+            new_player.x_player = packet.x_packet;
+            new_player.y_player = packet.y_packet;
+            cout << "new player: " << packet.sender_name << endl;
+            cout << "(x, y) : (" << packet.x_packet << ", " << packet.y_packet << ")" << endl;
             game.add_player(recvline, new_player);
 
             FD_SET(connfd, &allset);
             if(connfd > maxfd) maxfd = connfd;
         }
         //看每個 client
-        int num_players = game.get_player_size();
-        for (const auto& player : game.get_players_map() ){
-            sockfd = player.second.sockfd;
-            if(FD_ISSET(sockfd, &rset)){
-                //handle_client
+        // int num_players = game.get_player_size();
+        // for (const auto& player : game.get_players_map() ){
+        //     sockfd = player.second.sockfd;
+        //     if(FD_ISSET(sockfd, &rset)){
+        //         //handle_client
                 
-            }
-        }
+        //     }
+        // }
 
 
     }
