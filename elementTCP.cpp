@@ -18,17 +18,16 @@ json Packet::packet_to_json() {
 
 
 Packet Packet::json_to_packet(json& j) {
-    try {
-        Packet p;
-        j.at("mode_packet").get_to(p.mode_packet);
-        j.at("sender_name").get_to(p.sender_name);
-        j.at("receiver_name").get_to(p.receiver_name);
-        j.at("x_packet").get_to(p.x_packet);
-        j.at("y_packet").get_to(p.y_packet);
-        j.at("message").get_to(p.message);
-        return p;
-    } catch (const json::exception& e) {
-        std::cerr << "JSON 反序列化出錯了！: " << e.what() << std::endl;
-        return Packet{};
-    }
+
+    Packet p;
+    // 進行賦值
+    p.mode_packet = j["mode_packet"];
+    strcpy(p.sender_name, j["sender_name"].get<std::string>().c_str());
+    strcpy(p.receiver_name, j["receiver_name"].get<std::string>().c_str());
+    p.x_packet = j["x_packet"];
+    p.y_packet = j["y_packet"];
+    strcpy(p.message, j["message"].get<std::string>().c_str());
+    return p;
+
 }
+
