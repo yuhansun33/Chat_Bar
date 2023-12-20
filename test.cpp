@@ -25,17 +25,17 @@ int main() {
         return -1;
     }
 
-    // // 接收伺服器發送的其他玩家的名字
-    // std::unordered_map<char*, sf::Sprite> otherCharacters;
-    // while(true) {
-    //     Packet packet = TCPdata.receiveData();
-    //     if (packet.mode_packet == MAPMODE) {
-    //         sf::Sprite otherCharacter(characterTexture);
-    //         otherCharacter.setScale(0.08f, 0.08f);
-    //         otherCharacter.setPosition(packet.x_packet, packet.y_packet);
-    //         otherCharacters[packet.sender_name] = otherCharacter;
-    //     }
-    // }
+    std::unordered_map<char*, sf::Sprite> otherCharacters;
+    while(true) {
+        Packet packet = TCPdata.receiveData();
+        if (packet.mode_packet == MAPMODE) {
+            sf::Sprite otherCharacter(characterTexture);
+            otherCharacter.setScale(0.08f, 0.08f);
+            otherCharacter.setPosition(packet.x_packet, packet.y_packet);
+            otherCharacters[packet.sender_name] = otherCharacter;
+            std::cout << packet.sender_name << std::endl;
+        }
+    }
 
     // 給伺服器發送自己的名字
     TCPdata.sendData(packet);
