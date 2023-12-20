@@ -101,22 +101,20 @@ int main() {
             //送所有人位置
             // unordered_map<char*, Player> players_map = game.get_players_map();
             for (auto& player : game.get_players_map()){
-                cout << "21" << endl;
-                cout << "player name: " << player.first << endl;
-                cout << "player x: " << player.second.x_player << endl;
-                cout << "player y: " << player.second.y_player << endl;
-                string player_name(player.first);
-                Packet packet(MAPMODE, player_name, "", player.second.x_player, player.second.y_player, "");
-                cout << "22" << endl;
+                // string player_name(player.first);
+                Packet packet(MAPMODE, player.first, "", player.second.x_player, player.second.y_player, "");
                 game.sendData(packet, connfd);
-                cout << "23" << endl;
             }
             //讀 ID
             //name in recvline
+            cout << "brfore receive" << endl;
             Packet packet = game.receiveData(connfd);
+            cout << "== after receive" << endl;
             //放入 vector
             Player new_player(connfd, MAPMODE, packet.x_packet, packet.y_packet);
+            cout << "after new player" << endl;
             game.add_player(packet.sender_name, new_player);
+            cout << "after add player" << endl;
             
             cout << "new player: " << packet.sender_name << " ";
             cout << "(x, y) : (" << packet.x_packet << ", " << packet.y_packet << ")" << " ";
