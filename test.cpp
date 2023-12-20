@@ -11,18 +11,13 @@ int main() {
     // 給伺服器發送自己的名字
     std::string name;
     std::cout << "請輸入你的名字: ";
-    std::getline(std::cin, name); // 使用getline来读取整行
-    // 使用name.c_str()来获取C风格字符串
-
-    Packet packet;
+    std::getline(std::cin, name); 
+    Packet packet(MAPMODE, name, "", 0, 0, "");
     packet.mode_packet = MAPMODE;
-    memset(packet.sender_name, 0, NAMELINE);
-    strncpy(packet.sender_name, name.c_str(), strlen(name.c_str()));
-    packet.sender_name[strlen(name.c_str())] = '\0';
-    packet.x_packet = 0;
-    packet.y_packet = 0;
     TCPdata.sendData(packet);
+
     // 接收伺服器發送的其他玩家的名字
+    
 
 
     // 建立視窗
