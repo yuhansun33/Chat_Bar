@@ -12,7 +12,7 @@ int main() {
     std::string name;
     std::cout << "請輸入你的名字: ";
     std::getline(std::cin, name); 
-    Packet packet(MAPMODE, name, "", 0, 0, "");
+    Packet packet(MAPMODE, name, "", 918, 847, "");
 
 
     // 建立視窗
@@ -120,7 +120,7 @@ int main() {
                 std::cout << "packet.sender_name: " << packet.sender_name << std::endl;
                 std::cout << "packet.x_packet: " << packet.x_packet << std::endl;
                 std::cout << "packet.y_packet: " << packet.y_packet << std::endl;
-                
+
                 if (otherCharacters.find(packet.sender_name) == otherCharacters.end()) {
                     sf::Sprite otherCharacter(characterTexture);
                     otherCharacter.setScale(0.08f, 0.08f);
@@ -132,10 +132,6 @@ int main() {
             }
         }
 
-        // 渲染
-        for(auto& otherCharacter : otherCharacters) {
-            window.draw(otherCharacter.second);
-        }
 
         if (Changed) {
             Packet packet(MAPMODE, name, "", character.getPosition().x, character.getPosition().y, "");
@@ -149,6 +145,10 @@ int main() {
         window.draw(character);
 
         // 繪製其他玩家
+        // 渲染
+        for(auto& otherCharacter : otherCharacters) {
+            window.draw(otherCharacter.second);
+        }
 
         // 顯示
         window.display();
