@@ -63,6 +63,7 @@ int main() {
 
     sf::View view(sf::FloatRect(0.f, 0.f, 800.f, 600.f));
     view.setCenter(character.getPosition());
+    bool isWindowFocused = true;
     TCPdata.turnOnNonBlock();
 
     // 遊戲主循環
@@ -83,24 +84,29 @@ int main() {
                 sf::FloatRect visibleArea(0, 0, 800.f * aspectRatio, 600.f); // Adjust 800.f and 600.f based on your desired aspect ratio
                 view = sf::View(visibleArea);
             }
+            if (event.type == sf::Event::GainedFocus) { isWindowFocused = true; }
+            if (event.type == sf::Event::LostFocus) { isWindowFocused = false; }
         }
 
-        // 更新主角的位置
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-            character.move(0, -2.7f);
-            Changed = true;
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-            character.move(-2.7f, 0);
-            Changed = true;
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-            character.move(0, 2.7f);
-            Changed = true;
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-            character.move(2.7f, 0);
-            Changed = true;
+        if(isWindowFocused){
+            // 更新主角的位置
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+                character.move(0, -2.7f);
+                Changed = true;
+            }
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+                character.move(-2.7f, 0);
+                Changed = true;
+            }
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+                character.move(0, 2.7f);
+                Changed = true;
+            }
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+                character.move(2.7f, 0);
+                Changed = true;
+            }
+
         }
 
         // 接收其他玩家的位置
