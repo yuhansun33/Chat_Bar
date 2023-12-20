@@ -17,8 +17,8 @@ int main() {
     Packet packet;
     packet.mode_packet = MAPMODE;
     memset(packet.sender_name, 0, NAMELINE);
-    strncpy(packet.sender_name, name.c_str(), NAMELINE-1);
-    packet.sender_name[NAMELINE] = '\0';
+    strncpy(packet.sender_name, name.c_str(), strlen(name.c_str()));
+    packet.sender_name[strlen(name.c_str())] = '\0';
     packet.x_packet = 0;
     packet.y_packet = 0;
     TCPdata.sendData(packet);
@@ -59,6 +59,15 @@ int main() {
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed)
                 window.close();
+            // Handle window resize
+            if (event.type == sf::Event::Resized) {
+                float newWidth = static_cast<float>(event.size.width);
+                float newHeight = static_cast<float>(event.size.height);
+                float aspectRatio = newWidth / newHeight;
+
+                sf::FloatRect visibleArea(0, 0, 800.f * aspectRatio, 600.f); // Adjust 800.f and 600.f based on your desired aspect ratio
+                view = sf::View(visibleArea);
+            }
         }
 
         // 更新主角的位置
