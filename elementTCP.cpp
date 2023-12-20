@@ -36,11 +36,23 @@ Packet Packet::json_to_packet(json& j) {
     Packet p;
     // 進行賦值
     p.mode_packet = j["mode_packet"];
-    strcpy(p.sender_name, j["sender_name"].get<std::string>().c_str());
-    strcpy(p.receiver_name, j["receiver_name"].get<std::string>().c_str());
+    try {
+        strcpy(p.sender_name, j["sender_name"].get<std::string>().c_str());
+    } catch (const json::exception& e) {
+        std::cerr <<  "sendname 反序列化出錯了！: " << e.what() << std::endl;
+    }
+    try {
+        strcpy(p.receiver_name, j["receiver_name"].get<std::string>().c_str());
+    } catch (const json::exception& e) {
+        std::cerr <<  "recvname 反序列化出錯了！: " << e.what() << std::endl;
+    }
     p.x_packet = j["x_packet"];
     p.y_packet = j["y_packet"];
-    strcpy(p.message, j["message"].get<std::string>().c_str());
+    try {
+        strcpy(p.message, j["message"].get<std::string>().c_str());
+    } catch (const json::exception& e) {
+        std::cerr <<  "message 反序列化出錯了！: " << e.what() << std::endl;
+    }
     return p;
 
 }
