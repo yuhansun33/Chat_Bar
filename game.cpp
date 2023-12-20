@@ -2,12 +2,7 @@
 #include "game.h"
 
 
-void Game::add_player(char* name, struct Player new_player){
-
-    std::cout << "player name: " << name << std::endl;
-    std::cout << "player sockfd: " << new_player.sockfd << std::endl;
-    players[name] = new_player;
-}
+void Game::add_player(char* name, struct Player new_player){ players[name] = new_player; }
 void Game::remove_player(char* name){ players.erase(name); }
 int  Game::get_player_size(){ return players.size(); }
 std::string Game::serialize(Packet packet){
@@ -29,9 +24,11 @@ void Game::sendData(Packet packet, int sockfd){
 Packet Game::receiveData(int sockfd){
     char buffer[MAXLINE];
     bzero(buffer, MAXLINE);
-    if (recv(sockfd, buffer, MAXLINE, 0) == -1) {
+    int n = recv(sockfd, buffer, MAXLINE, 0);
+    if (n == -1) {
+        std::cout << "(server) Failed to receive data" << std::endl;
         perror("Failed to receive data");
-    }else if(recv(sockfd, buffer, MAXLINE, 0) == 0){
+    }else if(n == 0){
         std::cout << "client disconnected" << std::endl;
         close(sockfd);
         exit(0);

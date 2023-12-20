@@ -110,9 +110,9 @@ int main() {
             Player new_player(connfd, MAPMODE, packet.x_packet, packet.y_packet);
             game.add_player(packet.sender_name, new_player);
             
-            cout << "new player: " << packet.sender_name << endl;
-            cout << "(x, y) : (" << packet.x_packet << ", " << packet.y_packet << ")" << endl;
-            cout << "1)sockfd: " << connfd << endl;
+            cout << "new player: " << packet.sender_name << " ";
+            cout << "(x, y) : (" << packet.x_packet << ", " << packet.y_packet << ")" << " ";
+            cout << "sockfd: " << connfd << endl;
 
             FD_SET(connfd, &allset);
             if(connfd > maxfd) maxfd = connfd;
@@ -125,7 +125,7 @@ int main() {
             if(FD_ISSET(sockfd, &rset)){
                 //handle_client
                 Packet packet = game.receiveData(sockfd);
-                cout << "sender: " << packet.sender_name << "(" << packet.x_packet << ", " << packet.y_packet << ")" << endl;
+                cout << "sender: " << packet.sender_name << " (" << packet.x_packet << ", " << packet.y_packet << ")" << endl;
                 if(packet.mode_packet == MAPMODE){
                     //map mode
                     Packet new_packet(MAPMODE, packet.sender_name, "", packet.x_packet, packet.y_packet, "");
