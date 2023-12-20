@@ -29,6 +29,7 @@ int main() {
     int otherCharactersSize = 0;
     if (rp.mode_packet == INITMODE) {
         otherCharactersSize = (int)rp.x_packet;
+        std::cout << "otherCharactersSize: " << otherCharactersSize << std::endl;
     }
 
     std::unordered_map<char*, sf::Sprite> otherCharacters;
