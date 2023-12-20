@@ -17,7 +17,7 @@ int main() {
     TCPdata.sendData(packet);
 
     // 接收伺服器發送的其他玩家的名字
-    
+
 
 
     // 建立視窗
@@ -39,10 +39,16 @@ int main() {
     character.setScale(0.08f, 0.08f);
     character.setPosition(packet.x_packet, packet.y_packet);
 
-    // 假設從伺服器接收到的其他角色位置數據
-    // std::vector<Player> otherPlayers = {
-        
-    // };
+    std::unordered_map<char*, sf::Sprite> otherCharacters;
+    while(true) {
+        Packet packet = TCPdata.receiveData();
+        if (packet.mode_packet == MAPMODE) {
+            sf::Sprite otherCharacter(characterTexture);
+            otherCharacter.setScale(0.08f, 0.08f);
+            otherCharacter.setPosition(packet.x_packet, packet.y_packet);
+            otherCharacters[packet.sender_name] = otherCharacter;
+        }
+    }
 
     sf::View view(sf::FloatRect(0.f, 0.f, 800.f, 600.f));
     view.setCenter(character.getPosition());
@@ -78,7 +84,25 @@ int main() {
             character.move(0.07f, 0);
         }
 
+        while(true){
+            Packet packet = TCPdata.receiveData();
+            if (packet.mode_packet == MAPMODE) {
+                if (otherCharacters.find(packet.sender_name) == otherCharacters.end()) {
+                    sf::Sprite otherCharacter(characterTexture);
+                    otherCharacter.setScale(0.08f, 0.08f);
+                    otherCharacter.setPosition(packet.x_packet, packet.y_packet);
+                    otherCharacters[packet.sender_name] = otherCharacter;
+                } else {
+                    otherCharacters[packet.sender_name].setPosition(packet.x_packet, packet.y_packet);
+                }   
+            }
+        }
+
         // 渲染
+        for(auto& otherCharacter : otherCharacters) {
+            window.draw(otherCharacter.second);
+        }
+        
         view.setCenter(character.getPosition());
         window.setView(view);
         window.clear();
