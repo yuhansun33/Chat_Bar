@@ -8,17 +8,12 @@ int main() {
     ClientConnectToServer TCPdata;
     TCPdata.serverIPPort(SERVERIP, GAMEPORT);
 
-    // 給伺服器發送自己的名字
+    // 輸入名字
     std::string name;
     std::cout << "請輸入你的名字: ";
     std::getline(std::cin, name); 
     Packet packet(MAPMODE, name, "", 0, 0, "");
     packet.mode_packet = MAPMODE;
-    TCPdata.sendData(packet);
-
-    // 接收伺服器發送的其他玩家的名字
-
-
 
     // 建立視窗
     sf::RenderWindow window(sf::VideoMode(500, 500), "聊Bar");
@@ -30,15 +25,7 @@ int main() {
         return -1;
     }
 
-    // 設置地圖
-    sf::Sprite mapSprite(mapTexture);
-    mapSprite.setScale(2.5f, 2.5f);
-
-    // 設置主角
-    sf::Sprite character(characterTexture);
-    character.setScale(0.08f, 0.08f);
-    character.setPosition(packet.x_packet, packet.y_packet);
-
+    // 接收伺服器發送的其他玩家的名字
     std::unordered_map<char*, sf::Sprite> otherCharacters;
     while(true) {
         Packet packet = TCPdata.receiveData();
@@ -49,6 +36,19 @@ int main() {
             otherCharacters[packet.sender_name] = otherCharacter;
         }
     }
+
+    // 給伺服器發送自己的名字
+    TCPdata.sendData(packet);
+
+    // 設置地圖
+    sf::Sprite mapSprite(mapTexture);
+    mapSprite.setScale(2.5f, 2.5f);
+
+    // 設置主角
+    sf::Sprite character(characterTexture);
+    character.setScale(0.08f, 0.08f);
+    character.setPosition(packet.x_packet, packet.y_packet);
+
 
     sf::View view(sf::FloatRect(0.f, 0.f, 800.f, 600.f));
     view.setCenter(character.getPosition());
@@ -102,7 +102,7 @@ int main() {
         for(auto& otherCharacter : otherCharacters) {
             window.draw(otherCharacter.second);
         }
-        
+
         view.setCenter(character.getPosition());
         window.setView(view);
         window.clear();
