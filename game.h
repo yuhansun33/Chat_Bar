@@ -4,15 +4,15 @@
 class Game{
 public:
     Game();
-    void add_player(struct player new_player);
-    void remove_player(int sockfd);
+    void add_player(char* name, struct Player new_player);
+    void remove_player(char* name);
     void get_player_size();
     void serialize(Packet packet, char* buffer);
     void deserialize(Packet packet, char* buffer);
     void broadcast_xy(Packet packet, int sockfd);
     void handle_client(int sockfd);
 private:
-    unorder_map<const char*, struct Player> players;
+    unordered_map<const char*, struct Player> players;
 };
 
 void Game::add_player(char* name, struct Player new_player){ players[name] = new_player; }

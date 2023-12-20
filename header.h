@@ -14,6 +14,7 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 #include <nlohmann/json.hpp>
+#include <sys/wait.h>
 
 #define MAXMODE     0
 #define CHATMODE    1
