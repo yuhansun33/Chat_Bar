@@ -4,7 +4,7 @@ LDFLAGS=-lsfml-graphics -lsfml-window -lsfml-system
 
 CLIENT_OBJS=clientTCP.o elementTCP.o test.o
 
-SERVER_OBJS=elementTCP.o server.o
+SERVER_OBJS=elementTCP.o game.o server.o
 
 all: main server
 
