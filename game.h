@@ -13,10 +13,10 @@ public:
     void sendData(Packet packet, int sockfd);
     Packet receiveData(int sockfd);
     void broadcast_xy(Packet packet, int sockfd);
-    void handle_client(int sockfd);
-    unordered_map<const char*, struct Player> get_players_map();
+    // void handle_client(int sockfd);
+    std::unordered_map<char*, struct Player> get_players_map();
 private:
-    std::unordered_map<const char*, struct Player> players;
+    std::unordered_map<char*, struct Player> players;
 };
 
 #endif

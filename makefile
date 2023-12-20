@@ -20,9 +20,14 @@ all: main server
 main: $(CLIENT_OBJS)
 	$(CXX) $(CXXFLAGS) -o main $(CLIENT_OBJS) $(LDFLAGS)
 
+<<<<<<< HEAD
 # 服务器端可执行文件
 server: $(SERVER_OBJS)
 	$(CXX) $(CXXFLAGS) -o server $(SERVER_OBJS) $(LDFLAGS)
+=======
+server: server.cpp
+	$(CC) $(CFLAGS) $< -o $@ $(SFML_LIBS)
+>>>>>>> b5ad52e8e52ca03def7bec5cefbcef0ddd861fca
 
 # 模式规则来构建任何需要的对象文件
 %.o: %.cpp

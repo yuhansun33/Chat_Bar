@@ -1,5 +1,5 @@
-#include "game.h"
 #include "elementTCP.h"
+#include "game.h"
 
 
 void Game::add_player(char* name, struct Player new_player){ players[name] = new_player; }
@@ -32,9 +32,9 @@ void Game::broadcast_xy(Packet packet, int sockfd){
     for (auto& player : players){
         if(player.second.sockfd != sockfd){
             //send
-            serialize(packet, buffer);
+            serialize(packet);
             write(player.second.sockfd, buffer, sizeof(Packet));
         }
     }
 }
-unordered_map<const char*, struct Player> Game::get_players_map(){ return players; }
+std::unordered_map<char*, struct Player> Game::get_players_map(){ return players; }
