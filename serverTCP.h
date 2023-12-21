@@ -19,8 +19,10 @@ public:
     std::string serialize(Packet packet);
     Packet deserialize(std::string& json_string);
     void sendData(Packet packet, int sockfd);
-    Packet receiveData(int sockfd);
+    Packet receiveData_login(int sockfd);
+    Packet receiveData_game(int sockfd);
     void broadcast_xy(Packet packet, int sockfd);
+    std::string get_player_name(int sockfd);
     
 private:
 	int			        n, listenfd, connfd, sockfd;
@@ -37,7 +39,7 @@ class PlayerList{
 public:
     PlayerList(){};
     void add_player(char* name, struct Player new_player);
-    void remove_player(char* name);
+    void remove_player(std::string rm_name);
     int  get_player_size();
     std::unordered_map<std::string, struct Player> get_players_map();
     void show_players();

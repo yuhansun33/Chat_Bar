@@ -45,7 +45,7 @@ void serverTCP::login_mainloop(){
             //accept
             accept_client();
             //讀 name
-            Packet packet = receiveData(connfd);
+            Packet packet = receiveData_login(connfd);
             std::cout << "sender: " << packet.sender_name << std::endl;
             //放入 vector
             Player new_player(connfd, LOGINMODE, 0, 0);
@@ -63,7 +63,7 @@ void serverTCP::login_mainloop(){
     }
 }
 void serverTCP::login_handle() {
-    Packet packet = receiveData(sockfd);
+    Packet packet = receiveData_login(sockfd);
     std::string login_name(packet.sender_name);
 
     // SHA-1 hashing for the password
@@ -126,7 +126,7 @@ void serverTCP::game_mainloop(){
     }
 }
 void serverTCP::game_handle(){
-    Packet packet = receiveData(sockfd);
+    Packet packet = receiveData_game(sockfd);
     std::cout << "sender: " << packet.sender_name << " (" << packet.x_packet << ", " << packet.y_packet << ")" << std::endl;
     if(packet.mode_packet == MAPMODE){
         //map mode
@@ -158,7 +158,7 @@ void serverTCP::new_game_handle(){
         sendData(packet, connfd);
     }
     //讀 ID
-    Packet packet = receiveData(connfd);
+    Packet packet = receiveData_game(connfd);
     //放入 vector
     Player new_player(connfd, MAPMODE, packet.x_packet, packet.y_packet);
     players[packet.sender_name] = new_player;
@@ -180,7 +180,7 @@ void serverTCP::sendData(Packet packet, int sockfd){
         perror("Failed to send data");
     }
 }
-Packet serverTCP::receiveData(int sockfd){
+Packet serverTCP::receiveData_login(int sockfd){
     char buffer[MAXLINE];
     bzero(buffer, MAXLINE);
     int n = Readline(sockfd, buffer, MAXLINE);
@@ -191,7 +191,29 @@ Packet serverTCP::receiveData(int sockfd){
         std::cout << "client disconnected" << std::endl;
         close(sockfd);
         return Packet();
-        //exit(0);
+    }
+    std::string data = buffer;
+    Packet packet = deserialize(data);
+    return packet;
+}
+Packet serverTCP::receiveData_game(int sockfd){
+    char buffer[MAXLINE];
+    bzero(buffer, MAXLINE);
+    int n = Readline(sockfd, buffer, MAXLINE);
+    if (n == -1) {
+        std::cout << "(server) Failed to receive data" << std::endl;
+        perror("Failed to receive data");
+    }else if(n == 0){
+        std::string name = get_player_name(sockfd);
+        std::cout << name << " disconnected" << std::endl;
+        //broadcast
+        Packet new_packet(MAPMODE, name.c_str(), "", -500, -500, "");
+        broadcast_xy(new_packet, sockfd);
+        //remove
+        PlayerList playerList;
+        playerList.remove_player(name);
+        close(sockfd);
+        return Packet();
     }
     std::string data = buffer;
     Packet packet = deserialize(data);
@@ -205,12 +227,20 @@ void serverTCP::broadcast_xy(Packet packet, int sockfd){
         }
     }
 }
+std::string serverTCP::get_player_name(int sockfd){
+    for (auto& player : players){
+        if(player.second.sockfd == sockfd){
+            return player.first;
+        }
+    }
+    return NULL;
+}
 //======= PlayerList
 void PlayerList::add_player(char* name, struct Player new_player){
     std::string name_str(name);
     players[name_str] = new_player;
 }
-void PlayerList::remove_player(char* name){ players.erase(name); }
+void PlayerList::remove_player(std::string rm_name){ players.erase(rm_name); }
 int  PlayerList::get_player_size(){ return players.size(); }
 std::unordered_map<std::string, struct Player> PlayerList::get_players_map(){ return players; }
 void PlayerList::show_players(){
