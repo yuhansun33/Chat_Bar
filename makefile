@@ -1,6 +1,6 @@
 CXX=g++
 CXXFLAGS=-Wall -std=c++11
-LDFLAGS=-lsfml-graphics -lsfml-window -lsfml-system
+LDFLAGS=-lsfml-graphics -lsfml-window -lsfml-system -lmysqlcppconn
 
 CLIENT_OBJS=readline.o clientTCP.o elementTCP.o clientMain.o
 
