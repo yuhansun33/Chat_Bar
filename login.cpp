@@ -7,6 +7,7 @@ void Login(ClientConnectToServer client, std::string& username, std::string& pas
     Packet packet(LOGINMODE, username, password);
     std::cout << "Login: " << username << " Passwd: " << password << std::endl;
     client.sendData(packet);
+    client.sendData(packet);
     Packet packet2 = client.receiveData();
     if (packet2.mode_packet == LOGINMODE && strcmp(packet2.message, "success") == 0) {
         std::cout << "Login success" << std::endl;

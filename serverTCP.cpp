@@ -44,7 +44,12 @@ void serverTCP::login_mainloop(){
         if(FD_ISSET(listenfd, &rset)){
             //accept
             accept_client();
-            std::cout << "new client: " << connfd << std::endl;
+            //讀 name
+            Packet packet = receiveData(connfd);
+            std::cout << "sender: " << packet.sender_name << std::endl;
+            //放入 vector
+            Player new_player(connfd, LOGINMODE, 0, 0);
+            players[packet.sender_name] = new_player;
         }
         //看每個 client
         for (auto& player : players){
