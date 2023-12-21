@@ -3,6 +3,7 @@
 #include "elementTCP.h"
 
 void Login(ClientConnectToServer client, std::string& username, std::string& password) {
+    std::cout << "Login" << std::endl;
     Packet packet(LOGINMODE, username, password);
     std::cout << "Login: " << username << " Passwd: " << password << std::endl;
     client.sendData(packet);

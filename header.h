@@ -35,7 +35,6 @@
 #define LOGINMODE    4
 #define REGISTERMODE 5
 
-#define SHA_DIGEST_LENGTH   160
 #define CHATDISTANCE        100
 #define GAMEPORT            11130
 #define LOGINPORT           11131

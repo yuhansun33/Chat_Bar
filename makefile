@@ -1,6 +1,6 @@
 CXX=g++
 CXXFLAGS=-Wall -std=c++11
-LDFLAGS=-lsfml-graphics -lsfml-window -lsfml-system -lmysqlcppconn
+LDFLAGS=-lsfml-graphics -lsfml-window -lsfml-system -lmysqlcppconn -lcrypto
 
 LOGIN_OBJS=login.o elementTCP.o readline.o clientTCP.o
 
@@ -8,9 +8,11 @@ CLIENT_OBJS=readline.o clientTCP.o elementTCP.o clientMain.o
 
 SERVER_OBJS=readline.o elementTCP.o game.o server.o
 
-SERVERLOGIN_OBJS=readline.o elementTCP.o serverLOGIN.o serverTCP.o 
+SERVERLOGIN_OBJS=readline.o elementTCP.o serverTCP.o serverLOGIN.o 
 
-all: main server login
+SERVERGAME_OBJS=readline.o elementTCP.o serverTCP.o serverGame.o 
+
+all: main server login serverLOGIN serverGame
 
 login: login.o
 	$(CXX) $(CXXFLAGS) -o login $(LOGIN_OBJS) $(LDFLAGS)
@@ -23,6 +25,9 @@ server: $(SERVER_OBJS)
 
 serverLOGIN: $(SERVERLOGIN_OBJS)
 	$(CXX) $(CXXFLAGS) -o serverLOGIN $(SERVERLOGIN_OBJS) $(LDFLAGS)
+
+serverGame: $(SERVERGAME_OBJS)
+	$(CXX) $(CXXFLAGS) -o serverGame $(SERVERGAME_OBJS) $(LDFLAGS)
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
