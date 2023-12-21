@@ -10,47 +10,6 @@ void sig_chld(int signo){
     return;
 }
 
-// Game::handle_client(int sockfd, char* name){
-//     int n;
-//     char buffer[MAXLINE], sendline[MAXLINE];
-//     Player player = players[name];
-
-//     while(true){
-//         if(strcmp(player.mode_player, "MAP") == 0){
-//             n = Read(sockfd, buffer, MAXLINE);
-//             Packet packet;
-//             deserialize(packet, buffer);
-//             //轉移至 chat mode
-//             if(strcmp(packet.mode_packet, "REQUEST") == 0){
-//                 if(strcmp(packet.message, "1st request\n") == 0){
-//                     snprintf(sendline, sizeof(sendline), "Do you want to connect? (Yes/No)\n");
-//                 }else if(strcmp(packet.message, "Yes\n") == 0){
-//                     snprintf(sendline, sizeof(sendline), "Can connect.\n");
-//                 }else if(strcmp(packet.message, "No\n") == 0){
-//                     snprintf(sendline, sizeof(sendline), "Can't connect.\n");
-//                 }
-//                 Write(players[packet.receiver_name].sockfd, sendline, strlen(sendline));
-//                 continue;
-//             }
-//             //map mode
-//             Packet new_packet;
-//             new_packet.mode_packet = packet.mode_packet;
-
-//             new_packet.x_packet = packet.x_packet;
-//             new_packet.y_packet = packet.y_packet;
-//             broadcast_xy(new_packet, sockfd);
-//         }else if(player.mode_player == CHAT_MODE){
-//             n = Read(sockfd, buffer, MAXLINE);
-//             Packet packet;
-//             deserialize(packet, buffer);
-//             //轉移至 map mode
-//             if() player.mode_player = MAP_MODE;
-//             //chat mode
-
-//         }
-//     }
-// }
-
 int main() {
     int                 n;
 	int			        listenfd, connfd, sockfd;

@@ -1,31 +1,31 @@
 #include "elementTCP.h"
-#include "game.h"
+#include "serverTCP.h"
 #include "readline.h"
 
-void Game::add_player(char* name, struct Player new_player){
+void serverTCP::add_player(char* name, struct Player new_player){
     std::string name_str(name);
     players[name_str] = new_player;
 }
-void Game::remove_player(char* name){ players.erase(name); }
-int  Game::get_player_size(){ return players.size(); }
-std::string Game::serialize(Packet packet){
+void serverTCP::remove_player(char* name){ players.erase(name); }
+int  serverTCP::get_player_size(){ return players.size(); }
+std::string serverTCP::serialize(Packet packet){
     std::string data = packet.packet_to_json().dump();
     return data;
 }
-Packet Game::deserialize(std::string& json_string){
+Packet serverTCP::deserialize(std::string& json_string){
     Packet packet;
     json j = json::parse(json_string);
     packet = packet.json_to_packet(j);
     return packet;
 }
-void Game::sendData(Packet packet, int sockfd){
+void serverTCP::sendData(Packet packet, int sockfd){
     std::string data = serialize(packet);
     data += "\n";
     if (send(sockfd, data.c_str(), data.size(), 0) == -1) {
         perror("Failed to send data");
     }
 }
-Packet Game::receiveData(int sockfd){
+Packet serverTCP::receiveData(int sockfd){
     char buffer[MAXLINE];
     bzero(buffer, MAXLINE);
     int n = Readline(sockfd, buffer, MAXLINE);
@@ -41,7 +41,7 @@ Packet Game::receiveData(int sockfd){
     Packet packet = deserialize(data);
     return packet;
 }
-void Game::broadcast_xy(Packet packet, int sockfd){
+void serverTCP::broadcast_xy(Packet packet, int sockfd){
     char buffer[MAXLINE];
     for (auto& player : players){
         if(player.second.sockfd != sockfd){
@@ -50,8 +50,8 @@ void Game::broadcast_xy(Packet packet, int sockfd){
         }
     }
 }
-std::unordered_map<std::string, struct Player> Game::get_players_map(){ return players; }
-void Game::show_players(){
+std::unordered_map<std::string, struct Player> serverTCP::get_players_map(){ return players; }
+void serverTCP::show_players(){
     std::cout << "name\tsockfd\tmode\tx\ty" << std::endl;
     for (auto& player : players){
         std::cout << player.first << "\t";
@@ -61,31 +61,7 @@ void Game::show_players(){
         std::cout << player.second.y_player << std::endl;
     }
 }
-int Game::get_player_sockfd(char* name){
+int serverTCP::get_player_sockfd(char* name){
     std::string name_str(name);
     return players[name_str].sockfd;
-}
-bool Game::connect_database(std::string db_name, std::string password){
-    MYSQL *conn;
-    mysql_init(&conn);
-    // 設定連線參數
-    mysql_real_connect(conn, "localhost", "root", "eee3228133@", "chatbar", 0, NULL, 0);
-    // 建立查詢字串
-    string query = "SELECT COUNT(*) FROM user WHERE UserName = '";
-    query += db_name + "' AND password = '";
-    query += password + "';";
-    // 執行查詢
-    mysql_query(conn, query.c_str());
-    // 取得查詢結果
-    MYSQL_RES *result = mysql_store_result(conn);
-    // 檢查查詢結果
-    MYSQL_ROW row;
-    int count = 0;
-    while ((row = mysql_fetch_row(result))) { count = atoi(row[0]); }
-    // 關閉連線
-    mysql_close(conn);
-    // 判斷帳號和密碼是否正確
-    if (count > 0) { return true; }
-    else { return false; }
-
 }
