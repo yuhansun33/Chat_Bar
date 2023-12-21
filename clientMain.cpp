@@ -73,6 +73,9 @@ public:
         distance = sqrt(pow(mx - getPosition().x, 2) + pow(my - getPosition().y, 2));
         std::cout << "distance: " << distance << std::endl;
     }
+    float getDistance() {
+        return distance;
+    }
 private:
     float distance;
 };
@@ -134,9 +137,13 @@ int main() {
     
     // Nonblock模式
     TCPdata.turnOnNonBlock();
-
+    sf::Text messageBar;
+    messageBar.setFont(font);  // 使用前面加载的字体
+    messageBar.setCharacterSize(70);  // 字体大小
+    messageBar.setFillColor(sf::Color::White);  // 字体颜色
     // 遊戲主循環
     bool isWindowFocused = true;
+    float aspectRatio = 0;
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -146,7 +153,7 @@ int main() {
             if (event.type == sf::Event::Resized) {
                 float newWidth = static_cast<float>(event.size.width);
                 float newHeight = static_cast<float>(event.size.height);
-                float aspectRatio = newWidth / newHeight;
+                aspectRatio = newWidth / newHeight;
                 sf::FloatRect visibleArea(0, 0, 800.f * aspectRatio, 600.f);
                 view = sf::View(visibleArea);
             }
@@ -156,6 +163,8 @@ int main() {
             TCPdata.sendData(packet);
         }
         // 接收其他玩家的位置
+        std::string mainCharacterName;
+        float minDistance = 100000000;
         while(true){
             Packet updatePacket = TCPdata.receiveDataNonBlock();
             if (updatePacket.mode_packet == EMPTYMODE) {
@@ -172,18 +181,24 @@ int main() {
                 } else {
                     otherCharacters[updatePacket.sender_name].setPosition(updatePacket.x_packet, updatePacket.y_packet);
                     otherCharacters[updatePacket.sender_name].refreshDistance(mainCharacter.getPosition().x, mainCharacter.getPosition().y);
-                }   
+                }
+                if(otherCharacters[updatePacket.sender_name].getDistance() < minDistance) {
+                    minDistance = otherCharacters[updatePacket.sender_name].getDistance();
+                    mainCharacterName = updatePacket.sender_name;
+                    if(minDistance < CHATDISTANCE) {
+                        std::string message = mainCharacterName + " is near you! Ask him/her to Chat ^^!";
+                        messageBar.setString(message);
+                    }
+                }
             }
         }
 
-        sf::Text messageBar;
-        messageBar.setFont(font);  // 使用前面加载的字体
-        messageBar.setCharacterSize(70);  // 字体大小
-        messageBar.setFillColor(sf::Color::White);  // 字体颜色
-        messageBar.setPosition(mainCharacter.getPosition().x, mainCharacter.getPosition().y - 30);
-        messageBar.setString("Heelollo");
-
         view.setCenter(mainCharacter.getPosition());
+        sf::Vector2f viewCenter = view.getCenter();
+        sf::Vector2f viewSize = view.getSize();
+        float messageBarX = viewCenter.x - viewSize.x / 2 + 10;  // 视图左边缘 + 10
+        float messageBarY = viewCenter.y + viewSize.y / 2 - messageBar.getCharacterSize();  // 视图底边缘 - 30
+        messageBar.setPosition(messageBarX, messageBarY);
         window.setView(view);
         window.clear();
         window.draw(mapSprite);

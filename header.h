@@ -11,19 +11,20 @@
 #include <signal.h>
 #include <stdexcept> 
 #include <sys/wait.h>
-#include <mysql_driver.h>
-#include <mysql_connection.h>
-#include <cppconn/prepared_statement.h>
-#include <cppconn/resultset.h>
-#include <cppconn/statement.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <openssl/sha.h>
 #include <unordered_map>
+#include <mysql_driver.h>
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 #include <nlohmann/json.hpp>
+#include <mysql_connection.h>
+#include <cppconn/resultset.h>
+#include <cppconn/statement.h>
+#include <cppconn/prepared_statement.h>
 
 
 #define EMPTYMODE    -1
@@ -34,6 +35,7 @@
 #define LOGINMODE    4
 #define REGISTERMODE 5
 
+#define CHATDISTANCE 100
 #define GAMEPORT     11130
 #define LOGINPORT    11131
 #define NAMELINE     128
