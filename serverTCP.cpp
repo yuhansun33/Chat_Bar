@@ -53,6 +53,15 @@ void serverTCP::login_mainloop(){
         }
     }
 }
+void serverTCP::login_handle(){
+    Packet packet = receiveData(sockfd);
+    if(packet.mode_packet == LOGINMODE){
+        
+    }else if(packet.mode_packet == REGISTMODE){
+        
+    }
+
+}
 void serverTCP::game_mainloop(){
     while (true) {
         rset = allset;
