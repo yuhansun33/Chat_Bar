@@ -139,8 +139,8 @@ int main() {
     TCPdata.turnOnNonBlock();
     sf::Text messageBar;
     messageBar.setFont(font);  // 使用前面加载的字体
-    messageBar.setCharacterSize(70);  // 字体大小
-    messageBar.setFillColor(sf::Color::White);  // 字体颜色
+    messageBar.setCharacterSize(50);  // 字体大小
+    messageBar.setFillColor(sf::Color::Cyan);  // 字体颜色
     // 遊戲主循環
     bool isWindowFocused = true;
     float aspectRatio = 0;
@@ -158,13 +158,26 @@ int main() {
                 view = sf::View(visibleArea);
             }
         }
+        std::string mainCharacterName;
+        float minDistance = 100000000;
         if (mainCharacter.mainCharacterMove(isWindowFocused)) {
             Packet packet(MAPMODE, name, "", mainCharacter.getPosition().x, mainCharacter.getPosition().y, "");
             TCPdata.sendData(packet);
+            for(auto& otherCharacter : otherCharacters){
+                otherCharacter.second.refreshDistance(mainCharacter.getPosition().x, mainCharacter.getPosition().y);
+                if(minDistance > otherCharacter.second.getDistance()) {
+                    minDistance = otherCharacter.second.getDistance();
+                    mainCharacterName = otherCharacter.first;
+                    if(minDistance < CHATDISTANCE) {
+                        std::string message =  "Press X to ask " + mainCharacterName + " to ChatBar!";
+                        messageBar.setString(message);
+                    }else {
+                        messageBar.setString("");
+                    }
+                }
+            }    
         }
         // 接收其他玩家的位置
-        std::string mainCharacterName;
-        float minDistance = 100000000;
         while(true){
             Packet updatePacket = TCPdata.receiveDataNonBlock();
             if (updatePacket.mode_packet == EMPTYMODE) {
@@ -186,8 +199,10 @@ int main() {
                     minDistance = otherCharacters[updatePacket.sender_name].getDistance();
                     mainCharacterName = updatePacket.sender_name;
                     if(minDistance < CHATDISTANCE) {
-                        std::string message = mainCharacterName + " is near you! Ask him/her to Chat ^^!";
+                        std::string message =  "Press X to ask " + mainCharacterName + " to ChatBar!";
                         messageBar.setString(message);
+                    }else {
+                        messageBar.setString("");
                     }
                 }
             }
