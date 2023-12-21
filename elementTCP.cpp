@@ -31,6 +31,15 @@ json Packet::packet_to_json() {
     }
 }
 
+void Packet::printPacket(){
+    std::cout << "mode: " << mode_packet << std::endl;
+    std::cout << "sender: " << sender_name << std::endl;
+    std::cout << "receiver: " << receiver_name << std::endl;
+    std::cout << "x: " << x_packet << std::endl;
+    std::cout << "y: " << y_packet << std::endl;
+    std::cout << "message: " << message << std::endl;
+}
+
 
 Packet Packet::json_to_packet(json& j) {
     Packet p;

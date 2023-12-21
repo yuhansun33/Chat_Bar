@@ -16,6 +16,7 @@ struct Packet{
 	float x_packet;
 	float y_packet;
 	char message[MAXLINE];
+	void printPacket();
 };
 
 struct Player{

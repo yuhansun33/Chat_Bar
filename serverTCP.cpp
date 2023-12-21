@@ -68,37 +68,38 @@ void serverTCP::login_handle() {
 
     // SHA-1 hashing for the password
     std::string password(packet.receiver_name);
-    unsigned char hash[SHA_DIGEST_LENGTH];
-    SHA1(reinterpret_cast<const unsigned char*>(password.c_str()), password.length(), hash);
+    // unsigned char hash[SHA_DIGEST_LENGTH];
+    // SHA1(reinterpret_cast<const unsigned char*>(password.c_str()), password.length(), hash);
 
-    // Convert the hashed password to a hexadecimal string
-    std::stringstream ss;
-    for (int i = 0; i < SHA_DIGEST_LENGTH; ++i) {
-        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
-    }
-    std::string hashed_password = ss.str();
-    sqlServer sqlServer(login_name, hashed_password);
+    // // Convert the hashed password to a hexadecimal string
+    // std::stringstream ss;
+    // for (int i = 0; i < SHA_DIGEST_LENGTH; ++i) {
+    //     ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+    // }
+    // std::string hashed_password = ss.str();
+    // sqlServer sqlServer(login_name, hashed_password);
+    sqlServer sqlServer(login_name, password);
 
     if (packet.mode_packet == LOGINMODE) {
         if (sqlServer.login_check() == true) {
             //login success
-            Packet new_packet(LOGINMODE, packet.sender_name, "", 0, 0, "login success\n");
+            Packet new_packet(LOGINMODE, packet.sender_name, "", 0, 0, "login success");
             sendData(new_packet, sockfd);
             std ::cout << "success" << std::endl;
         } else {
             //login fail
-            Packet new_packet(LOGINMODE, packet.sender_name, "", 0, 0, "login fail\n");
+            Packet new_packet(LOGINMODE, packet.sender_name, "", 0, 0, "login fail");
             sendData(new_packet, sockfd);
             std ::cout << "fail" << std::endl;
         }
     } else if (packet.mode_packet == REGISTERMODE) {
         if(sqlServer.db_register() == true){
             //register success
-            Packet new_packet(REGISTERMODE, packet.sender_name, "", 0, 0, "register success\n");
+            Packet new_packet(REGISTERMODE, packet.sender_name, "", 0, 0, "register success");
             sendData(new_packet, sockfd);
         }else{
             //register fail
-            Packet new_packet(REGISTERMODE, packet.sender_name, "", 0, 0, "register fail\n");
+            Packet new_packet(REGISTERMODE, packet.sender_name, "", 0, 0, "register fail");
             sendData(new_packet, sockfd);
         }
     }
@@ -134,13 +135,13 @@ void serverTCP::game_handle(){
     }else if(packet.mode_packet == REQMODE){
         //request mode
         int receiver_sockfd = players[packet.receiver_name].sockfd;
-        if(packet.message == "1st request\n"){
+        if(strcmp(packet.sender_name, packet.receiver_name) == 0){
             Packet new_packet(REQMODE, packet.receiver_name, packet.sender_name, 0, 0, "Connect?\n");
             sendData(new_packet, receiver_sockfd);
-        }else if(packet.message == "Yes\n"){
+        }else if(strcmp(packet.message, "Yes\n") == 0){
             Packet new_packet(REQMODE, packet.receiver_name, packet.sender_name, 0, 0, "Yes\n");
             sendData(new_packet, receiver_sockfd);
-        }else if(packet.message == "No\n"){
+        }else if(strcmp(packet.message, "No\n") == 0){
             Packet new_packet(REQMODE, packet.receiver_name, packet.sender_name, 0, 0, "No\n");
             sendData(new_packet, receiver_sockfd);
         }
@@ -189,14 +190,14 @@ Packet serverTCP::receiveData(int sockfd){
     }else if(n == 0){
         std::cout << "client disconnected" << std::endl;
         close(sockfd);
-        exit(0);
+        return Packet();
+        //exit(0);
     }
     std::string data = buffer;
     Packet packet = deserialize(data);
     return packet;
 }
 void serverTCP::broadcast_xy(Packet packet, int sockfd){
-    char buffer[MAXLINE];
     for (auto& player : players){
         if(player.second.sockfd != sockfd){
             //send
@@ -234,7 +235,7 @@ sqlServer::sqlServer(std::string user_name, std::string user_password){
 void sqlServer::db_connect(){
     //connect MySQL
     driver = sql::mysql::get_mysql_driver_instance();
-    con = driver->connect("tcp://127.0.0.1:3306", "root", "eee3228133@");
+    con = driver->connect("tcp://127.0.0.1:3306", "root", "reeper30226");
     //choose database
     con->setSchema("chatbar");
 }
@@ -253,7 +254,7 @@ void sqlServer::db_clear(){
 }
 void sqlServer::db_pswd_select(){
     //query
-    prep_stmt = con->prepareStatement("SELECT * FROM users WHERE username = ? AND password = ?");
+    prep_stmt = con->prepareStatement("SELECT * FROM user WHERE UserName = ? AND UserPassword = ?");
     prep_stmt->setString(1, user_name);
     prep_stmt->setString(2, user_password);
 }
@@ -272,7 +273,7 @@ bool sqlServer::login_check(){
 void sqlServer::db_user_insert(){
     try {
         //insert
-        prep_stmt = con->prepareStatement("INSERT INTO users (username, password) VALUES (?, ?)");
+        prep_stmt = con->prepareStatement("INSERT INTO user (UserName, UserPassword) VALUES (?, ?)");
         prep_stmt->setString(1, user_name);
         prep_stmt->setString(2, user_password);
         
