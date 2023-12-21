@@ -44,11 +44,13 @@ void serverTCP::login_mainloop(){
         if(FD_ISSET(listenfd, &rset)){
             //accept
             accept_client();
+            std::cout << "new client: " << connfd << std::endl;
         }
         //看每個 client
         for (auto& player : players){
             sockfd = player.second.sockfd;
             if(FD_ISSET(sockfd, &rset)){
+                std::cout << "client: " << sockfd << std::endl;
                 //handle every client
                 login_handle();
             }
@@ -77,10 +79,12 @@ void serverTCP::login_handle() {
             //login success
             Packet new_packet(LOGINMODE, packet.sender_name, "", 0, 0, "login success\n");
             sendData(new_packet, sockfd);
+            std ::cout << "login success" << std::endl;
         } else {
             //login fail
             Packet new_packet(LOGINMODE, packet.sender_name, "", 0, 0, "login fail\n");
             sendData(new_packet, sockfd);
+            std ::cout << "login fail" << std::endl;
         }
     } else if (packet.mode_packet == REGISTERMODE) {
         if(sqlServer.db_register() == true){
