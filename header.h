@@ -4,7 +4,6 @@
 #include <vector>
 #include <stdio.h>
 #include <fcntl.h>
-#include <mysql.h>
 #include <stdlib.h>
 #include <iostream>
 #include <unistd.h>
@@ -12,6 +11,11 @@
 #include <signal.h>
 #include <stdexcept> 
 #include <sys/wait.h>
+#include <mysql_driver.h>
+#include <mysql_connection.h>
+#include <cppconn/prepared_statement.h>
+#include <cppconn/resultset.h>
+#include <cppconn/statement.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -34,6 +38,6 @@
 #define MAXLINE     4096
 #define LISTENQ     1024
 #define SA          struct sockaddr
-#define SERVERIP    "192.168.1.255"
+#define SERVERIP    "192.168.1.152"
 
 #endif
