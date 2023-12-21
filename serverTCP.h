@@ -5,7 +5,7 @@
 class serverTCP{
 //share
 public:
-    serverTCP(){};
+    serverTCP();
     static void sig_chld(int signo);
     void TCP_connect(int port);
     void accept_client();
