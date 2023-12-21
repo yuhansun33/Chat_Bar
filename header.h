@@ -33,6 +33,6 @@
 #define MAXLINE     4096
 #define LISTENQ     1024
 #define SA          struct sockaddr
-#define SERVERIP    "127.0.0.1"
+#define SERVERIP    "192.168.1.255"
 
 #endif
