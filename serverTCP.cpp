@@ -1,6 +1,5 @@
 #include "elementTCP.h"
 #include "serverTCP.h"
-#include "sqlserver.h"
 #include "readline.h"
 
 //======= serverTCP
