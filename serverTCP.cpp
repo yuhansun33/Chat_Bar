@@ -79,12 +79,12 @@ void serverTCP::login_handle() {
             //login success
             Packet new_packet(LOGINMODE, packet.sender_name, "", 0, 0, "login success\n");
             sendData(new_packet, sockfd);
-            std ::cout << "login success" << std::endl;
+            std ::cout << "success" << std::endl;
         } else {
             //login fail
             Packet new_packet(LOGINMODE, packet.sender_name, "", 0, 0, "login fail\n");
             sendData(new_packet, sockfd);
-            std ::cout << "login fail" << std::endl;
+            std ::cout << "fail" << std::endl;
         }
     } else if (packet.mode_packet == REGISTERMODE) {
         if(sqlServer.db_register() == true){
