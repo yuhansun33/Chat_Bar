@@ -16,6 +16,8 @@ public:
     // void handle_client(int sockfd);
     std::unordered_map<std::string, struct Player> get_players_map();
     void show_players();
+    int get_player_sockfd(char* name);
+    bool connect_database(std::string db_name, std::string password);
 private:
     std::unordered_map<std::string, struct Player> players;
 };

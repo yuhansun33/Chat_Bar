@@ -104,19 +104,11 @@ int main() {
                 game.sendData(packet, connfd);
             }
             //讀 ID
-            //name in recvline
-            cout << "brfore receive" << endl;
             Packet packet = game.receiveData(connfd);
-            cout << "== after receive" << endl;
             //放入 vector
             Player new_player(connfd, MAPMODE, packet.x_packet, packet.y_packet);
-            cout << "after new player" << endl;
             game.add_player(packet.sender_name, new_player);
             
-            cout << "new player: " << packet.sender_name << " ";
-            cout << "(x, y) : (" << packet.x_packet << ", " << packet.y_packet << ")" << " ";
-            cout << "sockfd: " << connfd << endl;
-
             FD_SET(connfd, &allset);
             if(connfd > maxfd) maxfd = connfd;
         }
@@ -133,6 +125,19 @@ int main() {
                     //map mode
                     Packet new_packet(MAPMODE, packet.sender_name, "", packet.x_packet, packet.y_packet, "");
                     game.broadcast_xy(new_packet, sockfd);
+                }else if(packet.mode_packet == REQMODE){
+                    //request mode
+                    int receiver_sockfd = game.get_player_sockfd(packet.receiver_name);
+                    if(packet.message == "1st request\n"){
+                        Packet new_packet(REQMODE, packet.receiver_name, packet.sender_name, 0, 0, "Connect?\n");
+                        game.sendData(new_packet, receiver_sockfd);
+                    }else if(packet.message == "Yes\n"){
+                        Packet new_packet(REQMODE, packet.receiver_name, packet.sender_name, 0, 0, "Can connect.\n");
+                        game.sendData(new_packet, receiver_sockfd);
+                    }else if(packet.message == "No\n"){
+                        Packet new_packet(REQMODE, packet.receiver_name, packet.sender_name, 0, 0, "Can't connect.\n");
+                        game.sendData(new_packet, receiver_sockfd);
+                    }
                 }
             }
         }

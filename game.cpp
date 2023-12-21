@@ -61,3 +61,31 @@ void Game::show_players(){
         std::cout << player.second.y_player << std::endl;
     }
 }
+int Game::get_player_sockfd(char* name){
+    std::string name_str(name);
+    return players[name_str].sockfd;
+}
+bool Game::connect_database(std::string db_name, std::string password){
+    MYSQL *conn;
+    mysql_init(&conn);
+    // 設定連線參數
+    mysql_real_connect(conn, "localhost", "root", "eee3228133@", "chatbar", 0, NULL, 0);
+    // 建立查詢字串
+    string query = "SELECT COUNT(*) FROM user WHERE UserName = '";
+    query += db_name + "' AND password = '";
+    query += password + "';";
+    // 執行查詢
+    mysql_query(conn, query.c_str());
+    // 取得查詢結果
+    MYSQL_RES *result = mysql_store_result(conn);
+    // 檢查查詢結果
+    MYSQL_ROW row;
+    int count = 0;
+    while ((row = mysql_fetch_row(result))) { count = atoi(row[0]); }
+    // 關閉連線
+    mysql_close(conn);
+    // 判斷帳號和密碼是否正確
+    if (count > 0) { return true; }
+    else { return false; }
+
+}
