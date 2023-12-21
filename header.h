@@ -35,13 +35,14 @@
 #define LOGINMODE    4
 #define REGISTERMODE 5
 
-#define CHATDISTANCE 100
-#define GAMEPORT     11130
-#define LOGINPORT    11131
-#define NAMELINE     128
-#define MAXLINE      4096
-#define LISTENQ      1024
-#define SA           struct sockaddr
-#define SERVERIP     "192.168.1.152"
+#define SHA_DIGEST_LENGTH   160
+#define CHATDISTANCE        100
+#define GAMEPORT            11130
+#define LOGINPORT           11131
+#define NAMELINE            128
+#define MAXLINE             4096
+#define LISTENQ             1024
+#define SA                  struct sockaddr
+#define SERVERIP            "192.168.1.152"
 
 #endif

@@ -1,5 +1,6 @@
 #include "elementTCP.h"
 #include "serverTCP.h"
+#include "sqlserver.h"
 #include "readline.h"
 
 //======= serverTCP
@@ -33,6 +34,8 @@ void serverTCP::accept_client(){
     if ( (connfd = accept(listenfd, (SA *) &cliaddr, &clilen)) < 0) {
         if (errno != EINTR){ perror("accept error"); }
     }
+    FD_SET(connfd, &allset);
+    if(connfd > maxfd) maxfd = connfd;
 }
 void serverTCP::login_mainloop(){
     while (true) {
@@ -53,14 +56,44 @@ void serverTCP::login_mainloop(){
         }
     }
 }
-void serverTCP::login_handle(){
+void serverTCP::login_handle() {
     Packet packet = receiveData(sockfd);
-    if(packet.mode_packet == LOGINMODE){
-        
-    }else if(packet.mode_packet == REGISTMODE){
-        
-    }
+    std::string login_name(packet.sender_name);
 
+    // SHA-1 hashing for the password
+    std::string password(packet.receiver_name);
+    unsigned char hash[SHA_DIGEST_LENGTH];
+    SHA1(reinterpret_cast<const unsigned char*>(password.c_str()), password.length(), hash);
+
+    // Convert the hashed password to a hexadecimal string
+    std::stringstream ss;
+    for (int i = 0; i < SHA_DIGEST_LENGTH; ++i) {
+        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+    }
+    std::string hashed_password = ss.str();
+    sqlServer sqlServer(login_name, hashed_password);
+
+    if (packet.mode_packet == LOGINMODE) {
+        if (sqlServer.login_check() == true) {
+            //login success
+            Packet new_packet(LOGINMODE, packet.sender_name, "", 0, 0, "login success\n");
+            sendData(new_packet, sockfd);
+        } else {
+            //login fail
+            Packet new_packet(LOGINMODE, packet.sender_name, "", 0, 0, "login fail\n");
+            sendData(new_packet, sockfd);
+        }
+    } else if (packet.mode_packet == REGISTERMODE) {
+        if(sqlServer.db_register() == true){
+            //register success
+            Packet new_packet(REGISTERMODE, packet.sender_name, "", 0, 0, "register success\n");
+            sendData(new_packet, sockfd);
+        }else{
+            //register fail
+            Packet new_packet(REGISTERMODE, packet.sender_name, "", 0, 0, "register fail\n");
+            sendData(new_packet, sockfd);
+        }
+    }
 }
 void serverTCP::game_mainloop(){
     while (true) {
@@ -120,9 +153,6 @@ void serverTCP::new_game_handle(){
     //放入 vector
     Player new_player(connfd, MAPMODE, packet.x_packet, packet.y_packet);
     players[packet.sender_name] = new_player;
-    
-    FD_SET(connfd, &allset);
-    if(connfd > maxfd) maxfd = connfd;
 }
 Packet serverTCP::deserialize(std::string& json_string){
     Packet packet;
