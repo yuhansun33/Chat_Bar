@@ -16,11 +16,6 @@ public:
     std::unordered_map<std::string, struct Player> get_players_map();
     void show_players();
     int get_player_sockfd(char* name);
-    sql::Connection * db_connect();
-    sql::ResultSet * db_query(sql::Connection *con, sql::PreparedStatement *prep_stmt);
-    void db_clear(sql::Connection *con, sql::PreparedStatement *prep_stmt, sql::ResultSet *res);
-    sql::PreparedStatement* db_pswd_select(sql::Connection *con, std::string db_name, std::string password);
-    bool login_check(std::string name, std::string password);
 private:
     std::unordered_map<std::string, struct Player> players;
 };
