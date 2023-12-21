@@ -153,6 +153,10 @@ void serverTCP::new_game_handle(){
     Player new_player(connfd, MAPMODE, packet.x_packet, packet.y_packet);
     players[packet.sender_name] = new_player;
 }
+std::string serverTCP::serialize(Packet packet){
+    std::string data = packet.packet_to_json().dump();
+    return data;
+}
 Packet serverTCP::deserialize(std::string& json_string){
     Packet packet;
     json j = json::parse(json_string);
