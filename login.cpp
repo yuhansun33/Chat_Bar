@@ -10,7 +10,7 @@ void Login(ClientConnectToServer client, std::string& username, std::string& pas
     client.sendData(packet);
     Packet packet2 = client.receiveData();
     if (packet2.mode_packet == LOGINMODE && strcmp(packet2.message, "success") == 0) {
-        std::cout << "Login success" << std::endl;
+        std::cout << "Login success!" << std::endl;
     } else {
         std::cout << "Login failed" << std::endl;
     }
@@ -76,6 +76,7 @@ int main() {
                         typingUsername = false;
                         typingPassword = true;
                     } else if (loginButton.getGlobalBounds().contains(mousePos)) {
+                        std::cout << username << " " << password << std::endl;
                         Login(client, username, password);
                         typingUsername = true;
                         typingPassword = false;
@@ -84,6 +85,7 @@ int main() {
             }
             if (event.type == sf::Event::KeyPressed) {
                 if (event.key.code == sf::Keyboard::Enter) {
+                    std::cout << username << " " << password << std::endl;
                     Login(client, username, password);
                     typingUsername = true;
                     typingPassword = false;
