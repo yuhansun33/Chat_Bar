@@ -22,6 +22,8 @@
 
 sudo apt install nlohmann-json3-dev
 sudo apt-get install libsfml-dev
+sudo apt-get install libmysqlcppconn-dev
+
 
 ## spec項目
 
