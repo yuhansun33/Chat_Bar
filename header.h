@@ -26,18 +26,20 @@
 #include <nlohmann/json.hpp>
 
 
-#define EMPTYMODE   -1
-#define MAPMODE     0
-#define CHATMODE    1
-#define REQMODE     2
-#define INITMODE    3
+#define EMPTYMODE    -1
+#define MAPMODE      0
+#define CHATMODE     1
+#define REQMODE      2
+#define INITMODE     3
+#define LOGINMODE    4
+#define REGISTERMODE 5
 
-#define GAMEPORT    11130
-#define LOGINPORT   11131
-#define NAMELINE    128
-#define MAXLINE     4096
-#define LISTENQ     1024
-#define SA          struct sockaddr
-#define SERVERIP    "192.168.1.152"
+#define GAMEPORT     11130
+#define LOGINPORT    11131
+#define NAMELINE     128
+#define MAXLINE      4096
+#define LISTENQ      1024
+#define SA           struct sockaddr
+#define SERVERIP     "192.168.1.152"
 
 #endif
