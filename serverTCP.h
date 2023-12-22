@@ -34,7 +34,7 @@ private:
     fd_set              rset, allset;
 
     std::unordered_map<std::string, struct Player> players;
-    std::vector<std::string> disconnect_list;
+    std::unordered_map<int, std::string> disconnect_list; //name, sockfd
 };
 
 class sqlServer{

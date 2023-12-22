@@ -130,8 +130,9 @@ void serverTCP::game_mainloop(){
         }
         //disconnect list handle
         while(!disconnect_list.empty()){
-            players.erase(disconnect_list.back());
-            disconnect_list.pop_back();
+            auto firstElement = disconnect_list.begin();
+            players.erase(firstElement->second);
+            disconnect_list.erase(firstElement->first);
         }
     }
 }
@@ -220,7 +221,7 @@ Packet serverTCP::receiveData_game(int sockfd){
         Packet new_packet(MAPMODE, name.c_str(), "", -500, -500, "");
         broadcast_xy(new_packet, sockfd);
         //add to disconnect list
-        disconnect_list.push_back(name);
+        disconnect_list[sockfd] = name;
         //close
         shutdown(sockfd, SHUT_RDWR);
         close(sockfd);
@@ -232,7 +233,7 @@ Packet serverTCP::receiveData_game(int sockfd){
 }
 void serverTCP::broadcast_xy(Packet packet, int sockfd){
     for (auto& player : players){
-        if(player.second.sockfd != sockfd){
+        if(player.second.sockfd != sockfd and disconnect_list.find(player.second.sockfd) == disconnect_list.end()){
             //send
             sendData(packet, player.second.sockfd);
         }
