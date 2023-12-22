@@ -329,12 +329,11 @@ int sqlServer::db_register(){
     std::cout << "user_name: " << user_name << std::endl;
     std::cout << "user_password: " << user_password << std::endl;
     std::cout << "affectedRows: " << affectedRows << std::endl;
+    db_clear();
     if(affectedRows > 0){
         std::cout << "affectedRows > 0" << std::endl;
-        db_clear();
         return register_success;
     }else{
-        db_clear();
         return register_fail;
     }
 }
