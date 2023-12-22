@@ -93,14 +93,17 @@ void serverTCP::login_handle() {
             std ::cout << "fail" << std::endl;
         }
     } else if (packet.mode_packet == REGISTERMODE) {
+        std::cout << "register" << std::endl;
         if(sqlServer.db_register() == true){
             //register success
             Packet new_packet(REGISTERMODE, packet.sender_name, "", 0, 0, "register success");
             sendData(new_packet, sockfd);
+            std ::cout << "success" << std::endl;
         }else{
             //register fail
             Packet new_packet(REGISTERMODE, packet.sender_name, "", 0, 0, "register fail");
             sendData(new_packet, sockfd);
+            std ::cout << "fail" << std::endl;
         }
     }
 }
@@ -248,7 +251,8 @@ sqlServer::sqlServer(std::string user_name, std::string user_password){
 void sqlServer::db_connect(){
     //connect MySQL
     driver = sql::mysql::get_mysql_driver_instance();
-    con = driver->connect("tcp://127.0.0.1:3306", "root", SQLPASSWD);
+    con = driver->connect("tcp://127.0.0.1:3306", "gameuser", "Eee3228133@");
+    std::cout << "connect success" << std::endl;
     //choose database
     con->setSchema("chatbar");
 }
@@ -285,10 +289,12 @@ bool sqlServer::login_check(){
 }
 void sqlServer::db_user_insert(){
     try {
+        std::cout << "user_name: " << user_name << std::endl;
         //insert
         prep_stmt = con->prepareStatement("INSERT INTO user (UserName, UserPassword) VALUES (?, ?)");
         prep_stmt->setString(1, user_name);
         prep_stmt->setString(2, user_password);
+        // prep_stmt->executeUpdate();
         
         affectedRows = prep_stmt->executeUpdate();
     } catch (sql::SQLException &e) {
@@ -297,6 +303,9 @@ void sqlServer::db_user_insert(){
 }
 bool sqlServer::db_register(){
     db_connect();
+    std::cout << "user_name: " << user_name << std::endl;
+    std::cout << "user_password: " << user_password << std::endl;
+    std::cout << "affectedRows: " << affectedRows << std::endl;
     if(affectedRows > 0){
         db_user_insert();
         db_clear();

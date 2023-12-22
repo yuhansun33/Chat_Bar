@@ -43,6 +43,6 @@
 #define LISTENQ             1024
 #define SA                  struct sockaddr
 #define SERVERIP            "127.0.0.1"
-#define SQLPASSWD           "reeper30226"
+#define SQLPASSWD           "eee3228133@"
 
 #endif
