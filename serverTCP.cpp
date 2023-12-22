@@ -265,8 +265,11 @@ void sqlServer::db_query(){
     }
 }
 void sqlServer::db_clear(){
+    std::cout << "db_clear1" << std::endl;
     if(res != NULL) delete res;
+    std::cout << "db_clear2" << std::endl;
     if(prep_stmt != NULL) delete prep_stmt;
+    std::cout << "db_clear3" << std::endl;
     delete con;
 }
 void sqlServer::db_pswd_select(){
@@ -276,8 +279,6 @@ void sqlServer::db_pswd_select(){
     prep_stmt->setString(2, user_password);
 }
 bool sqlServer::login_check(){
-    std::cout << "user_name: " << user_name << std::endl;
-    std::cout << "user_password: " << user_password << std::endl;
     db_connect();
     db_pswd_select();
     db_query();
@@ -303,17 +304,19 @@ void sqlServer::db_user_insert(){
         perror("SQLException");
     }
 }
-bool sqlServer::db_register(){
+int sqlServer::db_register(){
+    if(login_check() == true){ return register_repeat; }
     db_connect();
     db_user_insert();
     std::cout << "user_name: " << user_name << std::endl;
     std::cout << "user_password: " << user_password << std::endl;
     std::cout << "affectedRows: " << affectedRows << std::endl;
     if(affectedRows > 0){
+        std::cout << "affectedRows > 0" << std::endl;
         db_clear();
-        return true;
+        return register_success;
     }else{
         db_clear();
-        return false;
+        return register_fail;
     }
 }

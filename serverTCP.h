@@ -46,7 +46,7 @@ public:
     void db_pswd_select();
     bool login_check();
     void db_user_insert();
-    bool db_register();
+    int db_register();
 private:
     sql::mysql::MySQL_Driver *driver;
     sql::Connection *con;
