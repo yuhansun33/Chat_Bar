@@ -2,21 +2,46 @@
 #include "clientTCP.h"
 #include "elementTCP.h"
 
-void Login(ClientConnectToServer client, std::string& username, std::string& password) {
+bool Login(ClientConnectToServer client, std::string& username, std::string& password) {
     std::cout << "Login" << std::endl;
     Packet packet(LOGINMODE, username, password);
     std::cout << "Login: " << username << " Passwd: " << password << std::endl;
     client.sendData(packet);
     client.sendData(packet);
+    username.clear();
+    password.clear();
     Packet packet2 = client.receiveData();
     if (packet2.mode_packet == LOGINMODE && strcmp(packet2.message, "login success") == 0) {
         std::cout << "Login success!" << std::endl;
+        return true;
     } else {
         std::cout << "Login failed" << std::endl;
+        return false;
     }
+}
+
+int Register(ClientConnectToServer ClientConnectToServer, std::string& username, std::string& password) {
+    std::cout << "Register" << std::endl;
+    Packet packet(REGISTERMODE, username, password);
+    ClientConnectToServer.sendData(packet);
+    ClientConnectToServer.sendData(packet);
     username.clear();
     password.clear();
+    Packet packet2 = ClientConnectToServer.receiveData();
+    std::cout << packet2.message << std::endl;
+    if (packet2.mode_packet == REGISTERMODE && strcmp(packet2.message, "register success") == 0) {
+        std::cout << "Register success!" << std::endl;
+        return true;
+    } else if (packet2.mode_packet == REGISTERMODE && strcmp(packet2.message, "register repeat") == 0){
+        std::cout << "Register failed" << std::endl;
+        return false;
+    } else {
+        std::cout << "Register failed" << std::endl;
+        return false;
+    }
 }
+
+
 
 int main() {
     // 創建窗口
@@ -46,12 +71,20 @@ int main() {
     passwordBox.setFillColor(sf::Color::White);
 
     sf::RectangleShape loginButton(sf::Vector2f(100, 40));
-    loginButton.setPosition(200, 200);
+    loginButton.setPosition(300, 200);
     loginButton.setFillColor(sf::Color::Green);
 
-    sf::Text loginButtonText("Login", font, 20);
-    loginButtonText.setPosition(220, 205);
+    sf::RectangleShape registerButton(sf::Vector2f(110, 40));
+    registerButton.setPosition(100, 200);
+    registerButton.setFillColor(sf::Color::Blue);
+
+    sf::Text loginButtonText("Login", font, 25);
+    loginButtonText.setPosition(325, 205);
     loginButtonText.setFillColor(sf::Color::White);
+
+    sf::Text registerButtonText("Register", font, 25);
+    registerButtonText.setPosition(115, 205);
+    registerButtonText.setFillColor(sf::Color::White);
 
     std::string username = "";
     std::string password = "";
@@ -78,6 +111,11 @@ int main() {
                     } else if (loginButton.getGlobalBounds().contains(mousePos)) {
                         std::cout << username << " " << password << std::endl;
                         Login(client, username, password);
+                        typingUsername = true;
+                        typingPassword = false;
+                    } else if (registerButton.getGlobalBounds().contains(mousePos)) {
+                        std::cout << "Register" << std::endl;
+                        Register(client, username, password);
                         typingUsername = true;
                         typingPassword = false;
                     }
@@ -117,7 +155,9 @@ int main() {
         window.draw(usernameBox);
         window.draw(passwordBox);
         window.draw(loginButton);
+        window.draw(registerButton);
         window.draw(loginButtonText);
+        window.draw(registerButtonText);
 
         // 在文本框中顯示已輸入的帳號和密碼（密碼以*顯示）
         sf::Text enteredUsername(username, font, 20);
