@@ -6,6 +6,12 @@
 serverTCP::serverTCP(){
     signal(SIGCHLD, sig_chld);
     listenfd = socket(AF_INET, SOCK_STREAM, 0);
+
+    // Set listenfd to non-blocking mode
+    int flags = fcntl(listenfd, F_GETFL, 0);
+    if (flags == -1) { std::cout << "fcntl F_GETFL error" << std::endl; }
+    flags |= O_NONBLOCK;
+    if (fcntl(listenfd, F_SETFL, flags) == -1) { std::cout << "fcntl F_SETFL error" << std::endl; }
 }
 void serverTCP::sig_chld(int signo){
     pid_t   pid;
@@ -28,13 +34,18 @@ void serverTCP::TCP_connect(int port){
     FD_ZERO(&allset);
     FD_SET(listenfd, &allset);
 }
-void serverTCP::accept_client(){
+bool serverTCP::accept_client(){
     clilen = sizeof(cliaddr);
     if ( (connfd = accept(listenfd, (SA *) &cliaddr, &clilen)) < 0) {
-        if (errno != EINTR){ perror("accept error"); }
+        if (errno != EINTR){
+            // std::cout << "accept error" << std::endl;
+            return false;
+            // perror("accept error");
+        }
     }
     FD_SET(connfd, &allset);
     if(connfd > maxfd) maxfd = connfd;
+    return true;
 }
 void serverTCP::login_mainloop(){
     while (true) {
@@ -43,7 +54,7 @@ void serverTCP::login_mainloop(){
         //listenfd
         if(FD_ISSET(listenfd, &rset)){
             //accept
-            accept_client();
+            if(accept_client() == false) continue;
             //讀 name
             Packet packet = receiveData_login(connfd);
             std::cout << "sender: " << packet.sender_name << std::endl;
@@ -115,9 +126,10 @@ void serverTCP::game_mainloop(){
         //listenfd
         if(FD_ISSET(listenfd, &rset)){
             //accept
-            accept_client();
-            //new client handle
-            new_game_handle();
+            if(accept_client() != false){
+                //new client handle
+                new_game_handle();
+            }
         }
         //看每個 client
         for (auto& player : players){
@@ -199,6 +211,7 @@ Packet serverTCP::receiveData_login(int sockfd){
         perror("Failed to receive data");
     }else if(n == 0){
         std::cout << "client disconnected" << std::endl;
+        FD_CLR(sockfd, &allset);
         close(sockfd);
         return Packet();
     }
@@ -223,6 +236,7 @@ Packet serverTCP::receiveData_game(int sockfd){
         disconnect_list[sockfd] = name;
         //close
         shutdown(sockfd, SHUT_RDWR);
+        FD_CLR(sockfd, &allset);
         close(sockfd);
         return Packet();
     }

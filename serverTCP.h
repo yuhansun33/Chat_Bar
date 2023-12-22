@@ -3,12 +3,12 @@
 #include "header.h"
 #include "elementTCP.h"
 class serverTCP{
-//share
 public:
+//share
     serverTCP();
     static void sig_chld(int signo);
     void TCP_connect(int port);
-    void accept_client();
+    bool accept_client();
 //login server
     void login_mainloop();
     void login_handle();
