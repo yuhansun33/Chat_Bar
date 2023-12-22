@@ -2,7 +2,7 @@
 #include "clientTCP.h"
 #include "elementTCP.h"
 
-bool Login(ClientConnectToServer client, std::string& username, std::string& password) {
+bool Login(ClientConnectToServer client, std::string& username, std::string& password, bool& firstConnection) {
     if(username.empty() || password.empty()) {
         std::cout << "Login failed" << std::endl;
         return false;
@@ -10,13 +10,17 @@ bool Login(ClientConnectToServer client, std::string& username, std::string& pas
     std::cout << "Login" << std::endl;
     Packet packet(LOGINMODE, username, password);
     std::cout << "Login: " << username << " Passwd: " << password << std::endl;
-    client.sendData(packet);
+    if(firstConnection){
+        client.sendData(packet);
+        firstConnection = false;
+    }
     client.sendData(packet);
     username.clear();
     password.clear();
     Packet packet2 = client.receiveData();
     if (packet2.mode_packet == LOGINMODE && strcmp(packet2.message, "login success") == 0) {
         std::cout << "Login success!" << std::endl;
+        execlp("./main", "./main", username.c_str(), (char*)NULL);
         return true;
     } else {
         std::cout << "Login failed" << std::endl;
@@ -24,14 +28,18 @@ bool Login(ClientConnectToServer client, std::string& username, std::string& pas
     }
 }
 
-int Register(ClientConnectToServer ClientConnectToServer, std::string& username, std::string& password) {
+int Register(ClientConnectToServer ClientConnectToServer, std::string& username, std::string& password, bool& firstConnection) {
     if(username.empty() || password.empty()) {
         std::cout << "Register failed" << std::endl;
         return 0;
     }
     std::cout << "Register" << std::endl;
     Packet packet(REGISTERMODE, username, password);
-    ClientConnectToServer.sendData(packet);
+
+    if(firstConnection){
+        ClientConnectToServer.sendData(packet);
+        firstConnection = false;
+    }
     ClientConnectToServer.sendData(packet);
     username.clear();
     password.clear();
@@ -107,6 +115,7 @@ int main() {
     bool typingUsername = false, typingPassword = false;
 
     // 主循環
+    bool firstConnection = true;
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -126,21 +135,22 @@ int main() {
                         typingPassword = true;
                     } else if (loginButton.getGlobalBounds().contains(mousePos)) {
                         std::cout << username << " " << password << std::endl;
-                        Login(client, username, password);
+                        Login(client, username, password, firstConnection);
                         typingUsername = true;
                         typingPassword = false;
                     } else if (registerButton.getGlobalBounds().contains(mousePos)) {
                         std::cout << "Register" << std::endl;
-                        Register(client, username, password);
+                        Register(client, username, password, firstConnection);
                         typingUsername = true;
                         typingPassword = false;
+                        continue;
                     }
                 }
             }
             if (event.type == sf::Event::KeyPressed) {
                 if (event.key.code == sf::Keyboard::Enter) {
                     std::cout << username << " " << password << std::endl;
-                    if(Login(client, username, password)){
+                    if(Login(client, username, password, firstConnection)){
                         window.close();
                         std::cout << "Login success" << std::endl;
                     };
