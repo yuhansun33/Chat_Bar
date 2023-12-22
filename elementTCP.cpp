@@ -1,5 +1,13 @@
 #include "elementTCP.h"
 
+Packet::Packet(){
+    mode_packet = EMPTYMODE;
+    x_packet = 0;
+    y_packet = 0;
+    sender_name[0] = '\0';
+    receiver_name[0] = '\0';
+    message[0] = '\0';
+}
 Packet::Packet(int mode, std::string sendstr, std::string recvstr, float x, float y, std::string msg){
     mode_packet = mode;
     x_packet = x;
