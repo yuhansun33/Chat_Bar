@@ -68,17 +68,18 @@ void serverTCP::login_handle() {
 
     // SHA-1 hashing for the password
     std::string password(packet.receiver_name);
-    // unsigned char hash[SHA_DIGEST_LENGTH];
-    // SHA1(reinterpret_cast<const unsigned char*>(password.c_str()), password.length(), hash);
+    unsigned char hash[SHA_DIGEST_LENGTH];
+    SHA1(reinterpret_cast<const unsigned char*>(password.c_str()), password.length(), hash);
 
-    // // Convert the hashed password to a hexadecimal string
-    // std::stringstream ss;
-    // for (int i = 0; i < SHA_DIGEST_LENGTH; ++i) {
-    //     ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
-    // }
-    // std::string hashed_password = ss.str();
-    // sqlServer sqlServer(login_name, hashed_password);
-    sqlServer sqlServer(login_name, password);
+    // Convert the hashed password to a hexadecimal string
+    std::stringstream ss;
+    for (int i = 0; i < SHA_DIGEST_LENGTH; ++i) {
+        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+    }
+    std::string hashed_password = ss.str();
+    sqlServer sqlServer(login_name, hashed_password);
+    //no sha
+    // sqlServer sqlServer(login_name, password);
 
     if (packet.mode_packet == LOGINMODE) {
         if (sqlServer.login_check() == true) {
@@ -289,12 +290,12 @@ bool sqlServer::login_check(){
 }
 void sqlServer::db_user_insert(){
     try {
-        std::cout << "user_name: " << user_name << std::endl;
         //insert
         prep_stmt = con->prepareStatement("INSERT INTO user (UserName, UserPassword) VALUES (?, ?)");
         prep_stmt->setString(1, user_name);
         prep_stmt->setString(2, user_password);
-        // prep_stmt->executeUpdate();
+        std::cout << "user_name: " << user_name << std::endl;
+        std::cout << "user_password: " << user_password << std::endl;
         
         affectedRows = prep_stmt->executeUpdate();
     } catch (sql::SQLException &e) {
@@ -303,11 +304,11 @@ void sqlServer::db_user_insert(){
 }
 bool sqlServer::db_register(){
     db_connect();
+    db_user_insert();
     std::cout << "user_name: " << user_name << std::endl;
     std::cout << "user_password: " << user_password << std::endl;
     std::cout << "affectedRows: " << affectedRows << std::endl;
     if(affectedRows > 0){
-        db_user_insert();
         db_clear();
         return true;
     }else{
