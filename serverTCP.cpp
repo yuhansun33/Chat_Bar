@@ -253,7 +253,6 @@ void sqlServer::db_connect(){
     //connect MySQL
     driver = sql::mysql::get_mysql_driver_instance();
     con = driver->connect("tcp://127.0.0.1:3306", "gameuser", "Eee3228133@");
-    std::cout << "connect success" << std::endl;
     //choose database
     con->setSchema("chatbar");
 }
@@ -277,6 +276,8 @@ void sqlServer::db_pswd_select(){
     prep_stmt->setString(2, user_password);
 }
 bool sqlServer::login_check(){
+    std::cout << "user_name: " << user_name << std::endl;
+    std::cout << "user_password: " << user_password << std::endl;
     db_connect();
     db_pswd_select();
     db_query();

@@ -54,6 +54,6 @@ private:
     sql::ResultSet *res;
     int affectedRows;
     std::string user_name;
-    std::string user_password; 
+    std::string user_password;
 };
 #endif
