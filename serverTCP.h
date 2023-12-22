@@ -32,20 +32,7 @@ private:
     fd_set              rset, allset;
 
     std::unordered_map<std::string, struct Player> players;
-};
-
-class PlayerList{
-    friend class serverTCP;
-public:
-    PlayerList(){};
-    void add_player(char* name, struct Player new_player);
-    void remove_player(std::string rm_name);
-    int  get_player_size();
-    std::unordered_map<std::string, struct Player> get_players_map();
-    void show_players();
-    int get_player_sockfd(char* name);
-private:
-    std::unordered_map<std::string, struct Player> players;
+    std::vector<std::string> disconnect_list;
 };
 
 class sqlServer{

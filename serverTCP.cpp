@@ -123,11 +123,16 @@ void serverTCP::game_mainloop(){
                 game_handle();
             }
         }
+        //disconnect list handle
+        for(auto& name : disconnect_list){
+            players.erase(name);
+        }
     }
 }
 void serverTCP::game_handle(){
     Packet packet = receiveData_game(sockfd);
     std::cout << "sender: " << packet.sender_name << " (" << packet.x_packet << ", " << packet.y_packet << ")" << std::endl;
+    std::cout << "player num : " << players.size() << std::endl;
     if(packet.mode_packet == MAPMODE){
         //map mode
         Packet new_packet(MAPMODE, packet.sender_name, "", packet.x_packet, packet.y_packet, "");
@@ -146,7 +151,6 @@ void serverTCP::game_handle(){
             sendData(new_packet, receiver_sockfd);
         }
     }
-
 }
 void serverTCP::new_game_handle(){
     //init packet
@@ -209,9 +213,10 @@ Packet serverTCP::receiveData_game(int sockfd){
         //broadcast
         Packet new_packet(MAPMODE, name.c_str(), "", -500, -500, "");
         broadcast_xy(new_packet, sockfd);
-        //remove
-        PlayerList playerList;
-        playerList.remove_player(name);
+        //add to disconnect list
+        disconnect_list.push_back(name);
+        //close
+        shutdown(sockfd, SHUT_RDWR);
         close(sockfd);
         return Packet();
     }
@@ -234,28 +239,6 @@ std::string serverTCP::get_player_name(int sockfd){
         }
     }
     return NULL;
-}
-//======= PlayerList
-void PlayerList::add_player(char* name, struct Player new_player){
-    std::string name_str(name);
-    players[name_str] = new_player;
-}
-void PlayerList::remove_player(std::string rm_name){ players.erase(rm_name); }
-int  PlayerList::get_player_size(){ return players.size(); }
-std::unordered_map<std::string, struct Player> PlayerList::get_players_map(){ return players; }
-void PlayerList::show_players(){
-    std::cout << "name\tsockfd\tmode\tx\ty" << std::endl;
-    for (auto& player : players){
-        std::cout << player.first << "\t";
-        std::cout << player.second.sockfd << "\t";
-        std::cout << player.second.mode_player << "\t";
-        std::cout << player.second.x_player << "\t";
-        std::cout << player.second.y_player << std::endl;
-    }
-}
-int PlayerList::get_player_sockfd(char* name){
-    std::string name_str(name);
-    return players[name_str].sockfd;
 }
 //======= sqlServer
 sqlServer::sqlServer(std::string user_name, std::string user_password){
