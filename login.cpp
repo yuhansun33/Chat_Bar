@@ -3,6 +3,10 @@
 #include "elementTCP.h"
 
 bool Login(ClientConnectToServer client, std::string& username, std::string& password) {
+    if(username.empty() || password.empty()) {
+        std::cout << "Login failed" << std::endl;
+        return false;
+    }
     std::cout << "Login" << std::endl;
     Packet packet(LOGINMODE, username, password);
     std::cout << "Login: " << username << " Passwd: " << password << std::endl;
@@ -21,6 +25,10 @@ bool Login(ClientConnectToServer client, std::string& username, std::string& pas
 }
 
 int Register(ClientConnectToServer ClientConnectToServer, std::string& username, std::string& password) {
+    if(username.empty() || password.empty()) {
+        std::cout << "Register failed" << std::endl;
+        return 0;
+    }
     std::cout << "Register" << std::endl;
     Packet packet(REGISTERMODE, username, password);
     ClientConnectToServer.sendData(packet);
@@ -48,7 +56,7 @@ int main() {
     ClientConnectToServer client;
     client.serverIPPort(SERVERIP, LOGINPORT);
 
-    sf::RenderWindow window(sf::VideoMode(500, 300), "Login Screen");
+    sf::RenderWindow window(sf::VideoMode(550, 300), "Login Screen");
     window.setFramerateLimit(60);
 
     // 登入介面元素
@@ -57,6 +65,14 @@ int main() {
         return -1;
     }
 
+    sf::Sprite background;
+    sf::Texture backgroundTexture;
+    if (!backgroundTexture.loadFromFile("Assets/Pictures/login.png")) {
+        return -1;
+    }
+    background.setTexture(backgroundTexture);
+    background.setScale(0.3f, 0.3f);
+    background.setPosition(0, 0);
     sf::Text usernameLabel("Username:", font, 20);
     usernameLabel.setPosition(50, 50);
     sf::Text passwordLabel("Password:", font, 20);
@@ -124,7 +140,10 @@ int main() {
             if (event.type == sf::Event::KeyPressed) {
                 if (event.key.code == sf::Keyboard::Enter) {
                     std::cout << username << " " << password << std::endl;
-                    Login(client, username, password);
+                    if(Login(client, username, password)){
+                        window.close();
+                        std::cout << "Login success" << std::endl;
+                    };
                     typingUsername = true;
                     typingPassword = false;
                 }
@@ -150,6 +169,7 @@ int main() {
         window.clear(sf::Color::Black);
 
         // 繪製介面元素
+        window.draw(background);
         window.draw(usernameLabel);
         window.draw(passwordLabel);
         window.draw(usernameBox);
