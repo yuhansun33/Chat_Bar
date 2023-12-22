@@ -81,15 +81,18 @@ private:
 };
 
 
-int main() {
+int main(int argc, char** argv) {
     // 建立與伺服器的連接
     ClientConnectToServer TCPdata;
     TCPdata.serverIPPort(SERVERIP, GAMEPORT);
 
     // 輸入名字
     std::string name;
-    std::cout << "請輸入你的名字: ";
-    std::getline(std::cin, name); 
+    if (argc == 2) {
+        name = argv[1];
+    } else {
+        return -1;
+    }
     Packet mainCharacterPacket(MAPMODE, name, "", 918, 847, "");
 
     // 建立視窗
