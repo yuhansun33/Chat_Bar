@@ -128,8 +128,9 @@ void serverTCP::game_mainloop(){
             }
         }
         //disconnect list handle
-        for(auto& name : disconnect_list){
-            players.erase(name);
+        while(!disconnect_list.empty()){
+            players.erase(disconnect_list.back());
+            disconnect_list.pop_back();
         }
     }
 }
@@ -281,8 +282,24 @@ void sqlServer::db_pswd_select(){
     prep_stmt->setString(1, user_name);
     prep_stmt->setString(2, user_password);
 }
+void sqlServer::db_user_select(){
+    //query
+    prep_stmt = con->prepareStatement("SELECT * FROM user WHERE UserName = ?");
+    prep_stmt->setString(1, user_name);
+}
 bool sqlServer::login_check(){
     db_pswd_select();
+    db_query();
+    if(res->next()){
+        db_clear();
+        return true;
+    }else{
+        db_clear();
+        return false;
+    }
+}
+bool sqlServer::register_check(){
+    db_user_select();
     db_query();
     if(res->next()){
         db_clear();
@@ -307,7 +324,7 @@ void sqlServer::db_user_insert(){
     }
 }
 int sqlServer::db_register(){
-    if(login_check() == true){ return register_repeat; }
+    if(register_check() == true){ return register_repeat; }
     db_user_insert();
     std::cout << "user_name: " << user_name << std::endl;
     std::cout << "user_password: " << user_password << std::endl;

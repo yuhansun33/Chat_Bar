@@ -43,9 +43,11 @@ public:
     ~sqlServer();
     int db_register();
     bool login_check();
+    bool register_check();
     void db_query();
     void db_clear();
     void db_pswd_select();
+    void db_user_select();
     void db_user_insert();
 private:
     int affectedRows;
