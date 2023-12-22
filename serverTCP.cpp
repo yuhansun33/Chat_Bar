@@ -37,6 +37,7 @@ void serverTCP::accept_client(){
     if(connfd > maxfd) maxfd = connfd;
 }
 void serverTCP::login_mainloop(){
+    sqlServer sqlServer;
     while (true) {
         rset = allset;
         n = select(maxfd + 1, &rset, NULL, NULL, NULL);
@@ -57,12 +58,12 @@ void serverTCP::login_mainloop(){
             if(FD_ISSET(sockfd, &rset)){
                 std::cout << "client: " << sockfd << std::endl;
                 //handle every client
-                login_handle();
+                login_handle(sqlServer);
             }
         }
     }
 }
-void serverTCP::login_handle() {
+void serverTCP::login_handle(sqlServer& sqlServer) {
     Packet packet = receiveData_login(sockfd);
     std::string login_name(packet.sender_name);
 
@@ -77,7 +78,7 @@ void serverTCP::login_handle() {
         ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
     }
     std::string hashed_password = ss.str();
-    sqlServer sqlServer(login_name, hashed_password);
+    sqlServer.db_information(login_name, hashed_password);
     //no sha
     // sqlServer sqlServer(login_name, password);
 
@@ -253,11 +254,6 @@ sqlServer::sqlServer(){
     //choose database
     con->setSchema("chatbar");
 }
-sqlServer::sqlServer(std::string user_name, std::string user_password){
-    sqlServer();
-    this->user_name = user_name;
-    this->user_password = user_password;
-}
 sqlServer::~sqlServer(){
     delete con;
 }
@@ -269,11 +265,21 @@ void sqlServer::db_query(){
         perror("SQLException");
     }
 }
+void sqlServer::db_information(std::string new_user_name, std::string new_user_password){
+    this->user_name = new_user_name;
+    this->user_password = new_user_password;
+}
 void sqlServer::db_clear(){
     std::cout << "db_clear1" << std::endl;
-    if(res != NULL) delete res;
+    if(res != NULL){
+        delete res;
+        res = NULL;
+    }
     std::cout << "db_clear2" << std::endl;
-    if(prep_stmt != NULL) delete prep_stmt;
+    if(prep_stmt != NULL){
+        delete prep_stmt;
+        prep_stmt = NULL;
+    }
     std::cout << "db_clear3" << std::endl;
 }
 void sqlServer::db_pswd_select(){
@@ -284,6 +290,7 @@ void sqlServer::db_pswd_select(){
 }
 void sqlServer::db_user_select(){
     //query
+    std::cout << "Value of con: " << con << std::endl;
     prep_stmt = con->prepareStatement("SELECT * FROM user WHERE UserName = ?");
     prep_stmt->setString(1, user_name);
 }
