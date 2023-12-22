@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS=-Wall -std=c++11
+CXXFLAGS=-Wall -std=c++11 -g
 LDFLAGS=-lsfml-graphics -lsfml-window -lsfml-system -lmysqlcppconn -lcrypto
 
 LOGIN_OBJS=login.o elementTCP.o readline.o clientTCP.o

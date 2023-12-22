@@ -245,16 +245,20 @@ std::string serverTCP::get_player_name(int sockfd){
     return NULL;
 }
 //======= sqlServer
-sqlServer::sqlServer(std::string user_name, std::string user_password){
-    this->user_name = user_name;
-    this->user_password = user_password;
-}
-void sqlServer::db_connect(){
+sqlServer::sqlServer(){
     //connect MySQL
     driver = sql::mysql::get_mysql_driver_instance();
     con = driver->connect("tcp://127.0.0.1:3306", "gameuser", "Eee3228133@");
     //choose database
     con->setSchema("chatbar");
+}
+sqlServer::sqlServer(std::string user_name, std::string user_password){
+    sqlServer();
+    this->user_name = user_name;
+    this->user_password = user_password;
+}
+sqlServer::~sqlServer(){
+    delete con;
 }
 void sqlServer::db_query(){    
     try {
@@ -270,7 +274,6 @@ void sqlServer::db_clear(){
     std::cout << "db_clear2" << std::endl;
     if(prep_stmt != NULL) delete prep_stmt;
     std::cout << "db_clear3" << std::endl;
-    delete con;
 }
 void sqlServer::db_pswd_select(){
     //query
@@ -279,7 +282,6 @@ void sqlServer::db_pswd_select(){
     prep_stmt->setString(2, user_password);
 }
 bool sqlServer::login_check(){
-    db_connect();
     db_pswd_select();
     db_query();
     if(res->next()){
@@ -306,7 +308,6 @@ void sqlServer::db_user_insert(){
 }
 int sqlServer::db_register(){
     if(login_check() == true){ return register_repeat; }
-    db_connect();
     db_user_insert();
     std::cout << "user_name: " << user_name << std::endl;
     std::cout << "user_password: " << user_password << std::endl;

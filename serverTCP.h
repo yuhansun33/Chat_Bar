@@ -16,12 +16,12 @@ public:
     void game_mainloop();
     void new_game_handle();
     void game_handle();
-    std::string serialize(Packet packet);
-    Packet deserialize(std::string& json_string);
     void sendData(Packet packet, int sockfd);
+    void broadcast_xy(Packet packet, int sockfd);
     Packet receiveData_login(int sockfd);
     Packet receiveData_game(int sockfd);
-    void broadcast_xy(Packet packet, int sockfd);
+    Packet deserialize(std::string& json_string);
+    std::string serialize(Packet packet);
     std::string get_player_name(int sockfd);
     
 private:
@@ -38,22 +38,22 @@ private:
 class sqlServer{
     friend class serverTCP;
 public:
-    sqlServer(){};
+    sqlServer();
     sqlServer(std::string user_name, std::string user_password);
-    void db_connect();
+    ~sqlServer();
+    int db_register();
+    bool login_check();
     void db_query();
     void db_clear();
     void db_pswd_select();
-    bool login_check();
     void db_user_insert();
-    int db_register();
 private:
-    sql::mysql::MySQL_Driver *driver;
-    sql::Connection *con;
-    sql::PreparedStatement *prep_stmt;
-    sql::ResultSet *res;
     int affectedRows;
+    sql::ResultSet *res;
     std::string user_name;
     std::string user_password;
+    sql::Connection *con;
+    sql::mysql::MySQL_Driver *driver;
+    sql::PreparedStatement *prep_stmt;
 };
 #endif
