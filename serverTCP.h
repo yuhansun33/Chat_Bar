@@ -4,11 +4,7 @@
 #include "elementTCP.h"
 class sqlServer;
 class serverTCP{
-<<<<<<< HEAD
-=======
     friend class sqlServer;
-//share
->>>>>>> 2826b63ab8e52e0872f54197ac06026d1e0539a4
 public:
 //share
     serverTCP();
