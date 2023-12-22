@@ -35,9 +35,9 @@
 #define LOGINMODE    4
 #define REGISTERMODE 5
 
-#define register_success    0
-#define register_repeat     1
-#define register_fail       2
+#define REG_SUCCESS    0
+#define REG_REPEAT     1
+#define REG_FAIL       2
 #define CHATDISTANCE        100
 #define GAMEPORT            11130
 #define LOGINPORT           11131
