@@ -2,7 +2,7 @@
 #include "clientTCP.h"
 #include "elementTCP.h"
 
-bool Login(ClientConnectToServer client, std::string& username, std::string& password, bool& firstConnection) {
+bool Login(ClientConnectToServer& client, std::string& username, std::string& password, bool& firstConnection) {
     if(username.empty() || password.empty()) {
         std::cout << "Login failed" << std::endl;
         return false;
@@ -28,7 +28,7 @@ bool Login(ClientConnectToServer client, std::string& username, std::string& pas
     }
 }
 
-int Register(ClientConnectToServer ClientConnectToServer, std::string& username, std::string& password, bool& firstConnection) {
+int Register(ClientConnectToServer& ClientConnectToServer, std::string& username, std::string& password, bool& firstConnection) {
     if(username.empty() || password.empty()) {
         std::cout << "Register failed" << std::endl;
         return 0;
@@ -49,10 +49,10 @@ int Register(ClientConnectToServer ClientConnectToServer, std::string& username,
         std::cout << "Register success!" << std::endl;
         return 1;
     } else if (packet2.mode_packet == REGISTERMODE && strcmp(packet2.message, "register repeat") == 0){
-        std::cout << "Register failed" << std::endl;
+        std::cout << "Register repeat!" << std::endl;
         return 0;
     } else {
-        std::cout << "Register failed" << std::endl;
+        std::cout << "Register failed!" << std::endl;
         return -1;
     }
 }
