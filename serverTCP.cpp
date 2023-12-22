@@ -248,7 +248,7 @@ sqlServer::sqlServer(std::string user_name, std::string user_password){
 void sqlServer::db_connect(){
     //connect MySQL
     driver = sql::mysql::get_mysql_driver_instance();
-    con = driver->connect("tcp://127.0.0.1:3306", "root", "reeper30226");
+    con = driver->connect("tcp://127.0.0.1:3306", "root", SQLPASSWD);
     //choose database
     con->setSchema("chatbar");
 }

@@ -1,6 +1,6 @@
 *.o
 main
+login
 server
 serverLOGIN
 serverGame
-login
