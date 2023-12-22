@@ -2,7 +2,13 @@
 #define serverTCP_h
 #include "header.h"
 #include "elementTCP.h"
+class sqlServer;
 class serverTCP{
+<<<<<<< HEAD
+=======
+    friend class sqlServer;
+//share
+>>>>>>> 2826b63ab8e52e0872f54197ac06026d1e0539a4
 public:
 //share
     serverTCP();
@@ -11,7 +17,7 @@ public:
     bool accept_client();
 //login server
     void login_mainloop();
-    void login_handle();
+    void login_handle(sqlServer& sqlserver);
 //game server
     void game_mainloop();
     void new_game_handle();
@@ -39,11 +45,11 @@ class sqlServer{
     friend class serverTCP;
 public:
     sqlServer();
-    sqlServer(std::string user_name, std::string user_password);
     ~sqlServer();
     int db_register();
     bool login_check();
     bool register_check();
+    void db_information(std::string new_user_name, std::string new_user_password);
     void db_query();
     void db_clear();
     void db_pswd_select();
