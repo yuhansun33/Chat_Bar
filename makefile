@@ -28,6 +28,6 @@ serverGame: $(SERVERGAME_OBJS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f *.o main server
+	rm -f *.o main server serverLOGIN serverGame login 
 
 .PHONY: clean
