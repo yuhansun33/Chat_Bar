@@ -194,6 +194,8 @@ int main(int argc, char** argv) {
                 if (otherCharacters.find(updatePacket.sender_name) == otherCharacters.end()) {
                     OtherCharacter otherCharacter(characterTexture, font, updatePacket.sender_name, updatePacket.x_packet, updatePacket.y_packet, mainCharacter.getPosition().x, mainCharacter.getPosition().y);
                     otherCharacters[updatePacket.sender_name] = otherCharacter;
+                } else if (updatePacket.x_packet == -500 && updatePacket.y_packet == -500) {
+                    otherCharacters.erase(updatePacket.sender_name);
                 } else {
                     otherCharacters[updatePacket.sender_name].setPosition(updatePacket.x_packet, updatePacket.y_packet);
                     otherCharacters[updatePacket.sender_name].refreshDistance(mainCharacter.getPosition().x, mainCharacter.getPosition().y);
