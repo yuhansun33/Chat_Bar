@@ -98,25 +98,31 @@ void serverTCP::login_handle(sqlServer& sqlServer) {
             //login success
             Packet new_packet(LOGINMODE, packet.sender_name, "", 0, 0, "login success");
             sendData(new_packet, sockfd);
-            std ::cout << "success" << std::endl;
+            std ::cout << "login success" << std::endl;
         } else {
             //login fail
             Packet new_packet(LOGINMODE, packet.sender_name, "", 0, 0, "login fail");
             sendData(new_packet, sockfd);
-            std ::cout << "fail" << std::endl;
+            std ::cout << "login fail" << std::endl;
         }
     } else if (packet.mode_packet == REGISTERMODE) {
         std::cout << "register" << std::endl;
-        if(sqlServer.db_register() == true){
+        int register_status = sqlServer.db_register();
+        if(register_status == REG_SUCCESS){
             //register success
             Packet new_packet(REGISTERMODE, packet.sender_name, "", 0, 0, "register success");
             sendData(new_packet, sockfd);
-            std ::cout << "success" << std::endl;
-        }else{
+            std ::cout << "register success" << std::endl;
+        }else if(register_status == REG_REPEAT){
+            //register fail
+            Packet new_packet(REGISTERMODE, packet.sender_name, "", 0, 0, "register repeat");
+            sendData(new_packet, sockfd);
+            std ::cout << "register repeat" << std::endl;
+        }else if(register_status == REG_FAIL){
             //register fail
             Packet new_packet(REGISTERMODE, packet.sender_name, "", 0, 0, "register fail");
             sendData(new_packet, sockfd);
-            std ::cout << "fail" << std::endl;
+            std ::cout << "register fail" << std::endl;
         }
     }
 }
@@ -346,7 +352,7 @@ void sqlServer::db_user_insert(){
     }
 }
 int sqlServer::db_register(){
-    if(register_check() == true){ return register_repeat; }
+    if(register_check() == true){ return REG_REPEAT; }
     db_user_insert();
     std::cout << "user_name: " << user_name << std::endl;
     std::cout << "user_password: " << user_password << std::endl;
@@ -354,8 +360,8 @@ int sqlServer::db_register(){
     db_clear();
     if(affectedRows > 0){
         std::cout << "affectedRows > 0" << std::endl;
-        return register_success;
+        return REG_SUCCESS;
     }else{
-        return register_fail;
+        return REG_FAIL;
     }
 }
