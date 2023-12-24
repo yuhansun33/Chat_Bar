@@ -165,14 +165,17 @@ void serverTCP::game_handle(){
     }else if(packet.mode_packet == REQMODE){
         //request mode
         int receiver_sockfd = players[packet.receiver_name].sockfd;
-        if(strcmp(packet.sender_name, packet.receiver_name) == 0){
-            Packet new_packet(REQMODE, packet.receiver_name, packet.sender_name, 0, 0, "Connect?\n");
+        std::cout << "receiver_sockfd: " << receiver_sockfd << std::endl;
+        if(strcmp(packet.message, "first request") == 0){
+            std::cout << "get first request" << std::endl;
+            Packet new_packet(REQMODE, packet.sender_name, packet.receiver_name, 0, 0, "Connect?");
             sendData(new_packet, receiver_sockfd);
-        }else if(strcmp(packet.message, "Yes\n") == 0){
-            Packet new_packet(REQMODE, packet.receiver_name, packet.sender_name, 0, 0, "Yes\n");
+            std::cout << "send \"Connect?\"" << std::endl;
+        }else if(strcmp(packet.message, "Yes") == 0){
+            Packet new_packet(REQMODE, packet.sender_name, packet.receiver_name, 0, 0, "Can chat");
             sendData(new_packet, receiver_sockfd);
-        }else if(strcmp(packet.message, "No\n") == 0){
-            Packet new_packet(REQMODE, packet.receiver_name, packet.sender_name, 0, 0, "No\n");
+        }else if(strcmp(packet.message, "No") == 0){
+            Packet new_packet(REQMODE, packet.sender_name, packet.receiver_name, 0, 0, "Can not chat");
             sendData(new_packet, receiver_sockfd);
         }
     }

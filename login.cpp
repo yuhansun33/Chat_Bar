@@ -68,6 +68,9 @@ int main() {
     window.setFramerateLimit(60);
 
     // 登入介面元素
+    sf::Color GoodGreen(189, 183, 107);
+    sf::Color brown(205, 133, 63);
+    sf::Color wheat(255, 231, 186);
     sf::Font font;
     if (!font.loadFromFile("Assets/Fonts/login_font.ttf")) {
         return -1;
@@ -81,9 +84,9 @@ int main() {
     background.setTexture(backgroundTexture);
     background.setScale(0.3f, 0.3f);
     background.setPosition(0, 0);
-    sf::Text usernameLabel("Username:", font, 20);
+    sf::Text usernameLabel("Username:", font, 23);
     usernameLabel.setPosition(50, 50);
-    sf::Text passwordLabel("Password:", font, 20);
+    sf::Text passwordLabel("Password:", font, 23);
     passwordLabel.setPosition(50, 120);
 
     sf::RectangleShape usernameBox(sf::Vector2f(300, 30));
@@ -96,11 +99,11 @@ int main() {
 
     sf::RectangleShape loginButton(sf::Vector2f(100, 40));
     loginButton.setPosition(320, 200);
-    loginButton.setFillColor(sf::Color::Green);
+    loginButton.setFillColor(brown);
 
     sf::RectangleShape registerButton(sf::Vector2f(110, 40));
     registerButton.setPosition(100, 200);
-    registerButton.setFillColor(sf::Color::Blue);
+    registerButton.setFillColor(GoodGreen);
 
     sf::Text loginButtonText("Login", font, 25);
     loginButtonText.setPosition(345, 205);

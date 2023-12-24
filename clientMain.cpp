@@ -1,6 +1,27 @@
 #include "header.h"
 #include "clientTCP.h"
 
+class ChatEnvironment{
+public:
+    bool HasRequest = false;
+    bool RequestSent = false;
+    bool InChatMode = false;
+    std::string ReqSender;
+    std::string ReqReceiver;
+
+    sf::Texture requestTexture;
+    sf::Sprite requestSprite;
+
+    ChatEnvironment(){
+        if (!requestTexture.loadFromFile("Assets/Pictures/request.png")) {
+            perror("request圖片加載失敗");
+            exit(-1);
+        }
+        requestSprite.setTexture(requestTexture);
+        requestSprite.setScale(0.5f, 0.5f);
+    }
+};
+
 class Character {
     private:
         sf::Sprite characterSprite;
@@ -110,6 +131,9 @@ int main(int argc, char** argv) {
         perror("字體加載失敗");
         return -1;
     }
+    // 定義顏色
+    sf::Color brown(139, 69, 19);
+    sf::Color LavenderBlush(255, 240, 245);
 
     // 接受其他玩家的資訊
     std::unordered_map<std::string, OtherCharacter> otherCharacters;
@@ -127,6 +151,9 @@ int main(int argc, char** argv) {
     // 給伺服器發送自己的資訊
     TCPdata.sendData(mainCharacterPacket);
 
+    // 設置聊天環境
+    ChatEnvironment chatEnv;
+
     // 設置地圖
     sf::Sprite mapSprite(mapTexture);
     mapSprite.setScale(2.5f, 2.5f);
@@ -143,7 +170,11 @@ int main(int argc, char** argv) {
     sf::Text messageBar;
     messageBar.setFont(font);  // 使用前面加载的字体
     messageBar.setCharacterSize(50);  // 字体大小
-    messageBar.setFillColor(sf::Color::Cyan);  // 字体颜色
+    messageBar.setFillColor(LavenderBlush);  // 字体颜色
+    sf::Text requestText;
+    requestText.setFont(font);
+    requestText.setCharacterSize(30);
+    requestText.setFillColor(brown);
     // 遊戲主循環
     bool isWindowFocused = true;
     float aspectRatio = 0;
@@ -171,6 +202,7 @@ int main(int argc, char** argv) {
                 if(minDistance > otherCharacter.second.getDistance()) {
                     minDistance = otherCharacter.second.getDistance();
                     mainCharacterName = otherCharacter.first;
+                    chatEnv.ReqReceiver = mainCharacterName;
                     if(minDistance < CHATDISTANCE) {
                         std::string message =  "Press X to ask " + mainCharacterName + " to ChatBar!";
                         messageBar.setString(message);
@@ -203,6 +235,7 @@ int main(int argc, char** argv) {
                 if(otherCharacters[updatePacket.sender_name].getDistance() < minDistance) {
                     minDistance = otherCharacters[updatePacket.sender_name].getDistance();
                     mainCharacterName = updatePacket.sender_name;
+                    chatEnv.ReqReceiver = mainCharacterName;
                     if(minDistance < CHATDISTANCE) {
                         std::string message =  "Press X to ask " + mainCharacterName + " to ChatBar!";
                         messageBar.setString(message);
@@ -211,24 +244,67 @@ int main(int argc, char** argv) {
                     }
                 }
             }
+            if (updatePacket.mode_packet == REQMODE && strcmp(updatePacket.message, "Connect?") == 0) {
+                std::cout << "收到聊天請求" << std::endl;
+                chatEnv.HasRequest = true;
+                chatEnv.ReqSender = updatePacket.sender_name;
+                std::cout << "chatEnv.ReqFrom: " << chatEnv.ReqSender << std::endl;
+            }
         }
+        //處裡按下要求聊天
+        if (isWindowFocused && !chatEnv.RequestSent && sf::Keyboard::isKeyPressed(sf::Keyboard::X)) {
+            // std::cout << "(2)minDistance: " << minDistance << std::endl;
+            // if (minDistance < CHATDISTANCE) {
+                std::cout << "======================按下X, 送出first request" << std::endl;
+                std::cout << "name: " << name << std::endl;
+                std::cout << "recver: " << chatEnv.ReqReceiver << std::endl;
+                Packet chatRequestPacket(REQMODE, name, chatEnv.ReqReceiver.c_str(), 0, 0, "first request");
+                TCPdata.sendData(chatRequestPacket);
+                chatEnv.RequestSent = true;
+            // }
+        }
+        //處裡被要求聊天
+        if(chatEnv.HasRequest) {
+            std::string message =  chatEnv.ReqSender + ":\nrequests to chat!\n"
+                                                     +   "        (y/n)";
+            requestText.setString(message);
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Y)) {
+                //接受請求
+                chatEnv.HasRequest = false;
+                std::cout << "按下Y" << std::endl;
+                // 進入聊天模式
+            } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::N)) {
+                //拒絕請求
+                chatEnv.HasRequest = false;
+                std::cout << "按下N" << std::endl;
+                // 回到地圖模式、告訴伺服器
+                    
+            }
+        }   
 
         view.setCenter(mainCharacter.getPosition());
         sf::Vector2f viewCenter = view.getCenter();
         sf::Vector2f viewSize = view.getSize();
-        float messageBarX = viewCenter.x - viewSize.x / 2 + 10;  // 视图左边缘 + 10
-        float messageBarY = viewCenter.y + viewSize.y / 2 - messageBar.getCharacterSize();  // 视图底边缘 - 30
-        messageBar.setPosition(messageBarX, messageBarY);
         window.setView(view);
         window.clear();
         window.draw(mapSprite);
-        window.draw(messageBar);
         mainCharacter.Draw(window);
 
         // 繪製其他玩家
         // 渲染
         for(auto& otherCharacter : otherCharacters) otherCharacter.second.Draw(window);
 
+        if(!chatEnv.HasRequest){
+            float messageBarX = viewCenter.x - viewSize.x / 2 + 10;  // 视图左边缘 + 10
+            float messageBarY = viewCenter.y + viewSize.y / 2 - messageBar.getCharacterSize();  // 视图底边缘 - 30
+            messageBar.setPosition(messageBarX, messageBarY);
+            window.draw(messageBar);
+        }else if(chatEnv.HasRequest){
+            chatEnv.requestSprite.setPosition(mainCharacter.getPosition().x - 150, mainCharacter.getPosition().y - 150);
+            window.draw(chatEnv.requestSprite);
+            requestText.setPosition(chatEnv.requestSprite.getPosition().x + 65, chatEnv.requestSprite.getPosition().y + 100);
+        }
+            window.draw(requestText);
         // 顯示
         window.display();
     }
