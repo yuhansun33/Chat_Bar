@@ -167,6 +167,7 @@ int main(int argc, char** argv) {
     
     // Nonblock模式
     TCPdata.turnOnNonBlock();
+    // 設置文字
     sf::Text messageBar;
     messageBar.setFont(font);  // 使用前面加载的字体
     messageBar.setCharacterSize(50);  // 字体大小
@@ -244,11 +245,20 @@ int main(int argc, char** argv) {
                     }
                 }
             }
-            if (updatePacket.mode_packet == REQMODE && strcmp(updatePacket.message, "Connect?") == 0) {
-                std::cout << "收到聊天請求" << std::endl;
-                chatEnv.HasRequest = true;
-                chatEnv.ReqSender = updatePacket.sender_name;
-                std::cout << "chatEnv.ReqFrom: " << chatEnv.ReqSender << std::endl;
+            if (updatePacket.mode_packet == REQMODE) {
+                if(strcmp(updatePacket.message, "Connect?") == 0){
+                    std::cout << "收到聊天請求" << std::endl;
+                    chatEnv.HasRequest = true;
+                    chatEnv.ReqSender = updatePacket.sender_name;
+                    std::cout << "chatEnv.ReqFrom: " << chatEnv.ReqSender << std::endl;
+                }else if(strcmp(updatePacket.message, "Can chat") == 0){
+                    std::cout << "收到聊天同意" << std::endl;
+                    chatEnv.RequestSent = false;
+                    chatEnv.InChatMode = true;
+                }else if(strcmp(updatePacket.message, "Can not chat") == 0){
+                    std::cout << "收到聊天拒絕" << std::endl;
+                    chatEnv.RequestSent = false;
+                }
             }
         }
         //處裡按下要求聊天
@@ -270,11 +280,16 @@ int main(int argc, char** argv) {
             requestText.setString(message);
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Y)) {
                 //接受請求
+                Packet chatRequestPacket(REQMODE, name, chatEnv.ReqSender.c_str(), 0, 0, "Yes");
+                TCPdata.sendData(chatRequestPacket);
                 chatEnv.HasRequest = false;
+                chatEnv.InChatMode = true;
                 std::cout << "按下Y" << std::endl;
                 // 進入聊天模式
             } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::N)) {
                 //拒絕請求
+                Packet chatRequestPacket(REQMODE, name, chatEnv.ReqSender.c_str(), 0, 0, "No");
+                TCPdata.sendData(chatRequestPacket);
                 chatEnv.HasRequest = false;
                 std::cout << "按下N" << std::endl;
                 // 回到地圖模式、告訴伺服器

@@ -174,9 +174,11 @@ void serverTCP::game_handle(){
         }else if(strcmp(packet.message, "Yes") == 0){
             Packet new_packet(REQMODE, packet.sender_name, packet.receiver_name, 0, 0, "Can chat");
             sendData(new_packet, receiver_sockfd);
+            std::cout << "recv Yes, send \"Can chat\"" << std::endl;
         }else if(strcmp(packet.message, "No") == 0){
             Packet new_packet(REQMODE, packet.sender_name, packet.receiver_name, 0, 0, "Can not chat");
             sendData(new_packet, receiver_sockfd);
+            std::cout << "recv No, send \"Can not chat\"" << std::endl;
         }
     }
 }
