@@ -162,7 +162,8 @@ void serverTCP::game_handle(){
         //map mode
         Packet new_packet(MAPMODE, packet.sender_name, "", packet.x_packet, packet.y_packet, "");
         broadcast_xy(new_packet, sockfd);
-    }else if(packet.mode_packet == REQMODE){
+    }
+    if(packet.mode_packet == REQMODE){
         //request mode
         int receiver_sockfd = players[packet.receiver_name].sockfd;
         std::cout << "receiver_sockfd: " << receiver_sockfd << std::endl;
@@ -180,6 +181,14 @@ void serverTCP::game_handle(){
             sendData(new_packet, receiver_sockfd);
             std::cout << "recv No, send \"Can not chat\"" << std::endl;
         }
+    }
+    if(packet.mode_packet == CHATMODE){
+        //chat mode
+        int receiver_sockfd = players[packet.receiver_name].sockfd;
+        std::cout << "send chat message: " << packet.sender_name << std::endl;
+        Packet new_packet(CHATMODE, packet.sender_name, packet.receiver_name, 0, 0, packet.message);
+        sendData(new_packet, receiver_sockfd);
+        std::cout << " ==> " << packet.receiver_name << std::endl;
     }
 }
 void serverTCP::new_game_handle(){

@@ -99,7 +99,7 @@ Packet ClientConnectToServer::receiveDataNonBlock() {
         return packet;
     } catch (const json::exception& e) {
         std::cerr << "packet 反序列化出錯了！: " << e.what() << std::endl;
-        return Packet{};
+        return Packet();
     }
 }
 
