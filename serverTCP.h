@@ -16,8 +16,8 @@ public:
     void login_handle(sqlServer& sqlserver);
 //game server
     void game_mainloop();
-    void new_game_handle();
-    void game_handle();
+    void new_game_handle(sqlServer& sqlServer);
+    void game_handle(sqlServer& sqlServer);
     void sendData(Packet packet, int sockfd);
     void broadcast_xy(Packet packet, int sockfd);
     Packet receiveData_login(int sockfd);
@@ -45,17 +45,23 @@ public:
     int db_register();
     bool login_check();
     bool register_check();
+    void addtimelen_check();
     void db_information(std::string new_user_name, std::string new_user_password);
+    void db_timelen(std::string name, std::string new_timelen);
     void db_query();
     void db_clear();
     void db_pswd_select();
     void db_user_select();
     void db_user_insert();
+    void db_time_insert();
+    float getSelfTotalTime();
+    std::pair<std::string, float> getUserMaxTime();
 private:
     int affectedRows;
     sql::ResultSet *res;
     std::string user_name;
     std::string user_password;
+    std::string timelen;
     sql::Connection *con;
     sql::mysql::MySQL_Driver *driver;
     sql::PreparedStatement *prep_stmt;

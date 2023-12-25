@@ -15,6 +15,8 @@ public:
     sf::Sprite chatroomSprite;
     bool changeView = false;
 
+    sf::Clock chatClock;
+
     ChatEnvironment(){
         if (!requestTexture.loadFromFile("Assets/Pictures/request.png")) {
             perror("request圖片加載失敗");
@@ -28,8 +30,9 @@ public:
         requestSprite.setScale(0.5f, 0.5f);
         chatroomSprite.setTexture(chatroomTexture);
         chatroomSprite.setScale(0.45f, 0.35f);
-
     }
+    void strartTimer(){ chatClock.restart(); }
+    sf::Time getChatTime(){ return chatClock.getElapsedTime(); }
 };
 
 class Character {
@@ -197,6 +200,47 @@ int main(int argc, char** argv) {
     chatRecord.setFillColor(sf::Color::White);
     std::string chatHistory;
     std::string userInput;
+    // 設置計分框
+    sf::Color rod(238, 221, 130, 230); // 底
+    sf::Color rod2(218, 165, 32); // 標題文字
+    sf::Color rod3(205, 92, 92); // BEST 文字
+    sf::Color rod4(128, 128, 128); // YOUR'S 文字
+    sf::RectangleShape box1(sf::Vector2f (180, 60));
+    sf::RectangleShape box2(sf::Vector2f (180, 60));
+    box1.setFillColor(rod);
+    box2.setFillColor(rod);    
+    sf::Text text1;
+    sf::Text text2;
+    text1.setFont(font);
+    text2.setFont(font);
+    text1.setCharacterSize(20);
+    text2.setCharacterSize(20);
+    text1.setFillColor(rod2);
+    text2.setFillColor(rod2);
+    text1.setString("BEST");
+    text2.setString("YOUR'S");
+    sf::Text bestname;
+    sf::Text bestscore;
+    sf::Text yourname;
+    sf::Text yourscore;
+    bestname.setFont(font);
+    bestscore.setFont(font);
+    yourname.setFont(font);
+    yourscore.setFont(font);
+    bestname.setCharacterSize(25);
+    bestscore.setCharacterSize(20);
+    yourname.setCharacterSize(25);
+    yourscore.setCharacterSize(20);
+    bestname.setFillColor(rod3);
+    bestscore.setFillColor(rod3);
+    yourname.setFillColor(rod4);
+    yourscore.setFillColor(rod4);
+    bestname.setString("-"); // 初始值
+    bestscore.setString("0.0"); // 初始值
+    yourname.setString(name);
+    yourscore.setString("0.0"); // 初始值
+
+
     // 設置文字框
     sf::RectangleShape inputBox(sf::Vector2f(300, 35));
     inputBox.setFillColor(sf::Color::White);
@@ -240,10 +284,18 @@ int main(int argc, char** argv) {
                     Packet chatPacket(ESCMODE, name, chatEnv.ReqReceiver.c_str(), 0, 0, message.c_str());
                     TCPdata.sendData(chatPacket);
                     std::cout << "發送離開聊天室訊息" << std::endl;
-                    chatHistory += message + "\n";
+                    chatHistory += message + "\n";  
                     chatEnv.changeView = true;
                     // 回到地圖模式
                     chatEnv.InChatMode = false;
+                    //結束計時
+                    sf::Time duration = chatEnv.getChatTime();
+                    float minutes = duration.asSeconds() / 60.0f;
+                    char minutesStr[20];
+                    sprintf(minutesStr, "%.1f", minutes);
+                    std::cout << "minutes: " << minutesStr << " min" << std::endl;
+                    Packet timePacket(TIMEMODE, name, "", 0, 0, minutesStr);
+                    TCPdata.sendData(timePacket);
                 }
             }
             if(event.type == sf::Event::TextEntered){
@@ -318,6 +370,8 @@ int main(int argc, char** argv) {
                         std::cout << "收到聊天同意" << std::endl;
                         chatEnv.RequestSent = false;
                         chatEnv.InChatMode = true;
+                        //開始計時
+                        chatEnv.strartTimer();
                         //重設聊天室
                         chatEnv.changeView = false;
                         chatHistory.clear();
@@ -326,6 +380,18 @@ int main(int argc, char** argv) {
                         std::cout << "收到聊天拒絕" << std::endl;
                         chatEnv.RequestSent = false;
                     }
+                }
+                if(updatePacket.mode_packet == TIMEMODE){
+                    std::cout << "收到時間訊息" << std::endl;
+                    std::string messageText(updatePacket.message);
+                    yourscore.setString(messageText);
+                }
+                if(updatePacket.mode_packet == RANKMODE){
+                    std::cout << "收到最高時間訊息" << std::endl;
+                    std::string user(updatePacket.sender_name);
+                    std::string messageText(updatePacket.message);
+                    bestname.setString(user);
+                    bestscore.setString(messageText);
                 }
             }
             //處裡按下要求聊天
@@ -351,6 +417,8 @@ int main(int argc, char** argv) {
                     TCPdata.sendData(chatRequestPacket);
                     chatEnv.HasRequest = false;
                     chatEnv.InChatMode = true;
+                    //開始計時
+                    chatEnv.strartTimer();
                     //重設聊天室
                     chatEnv.changeView = false;
                     chatHistory.clear();
@@ -373,6 +441,42 @@ int main(int argc, char** argv) {
             window.clear();
             window.draw(mapSprite);
             mainCharacter.Draw(window);
+            // 計分框
+            // 底
+            float box1X = viewCenter.x + viewSize.x / 2 - 190;
+            float box1Y = viewCenter.y - viewSize.y / 2 + 5;
+            float box2X = viewCenter.x + viewSize.x / 2 - 190;
+            float box2Y = viewCenter.y - viewSize.y / 2 + 70;
+            box1.setPosition(box1X, box1Y);
+            box2.setPosition(box2X, box2Y);
+            window.draw(box1);
+            window.draw(box2);
+            //標題字
+            float text1X = viewCenter.x + viewSize.x / 2 - 120;
+            float text1Y = viewCenter.y - viewSize.y / 2 + 5;
+            float text2X = viewCenter.x + viewSize.x / 2 - 130;
+            float text2Y = viewCenter.y - viewSize.y / 2 + 70;
+            text1.setPosition(text1X, text1Y);
+            text2.setPosition(text2X, text2Y);
+            window.draw(text1);
+            window.draw(text2);
+            //名字字
+            float bestnameX = viewCenter.x + viewSize.x / 2 - 170;
+            float bestnameY = viewCenter.y - viewSize.y / 2 + 30;
+            float bestscoreX = viewCenter.x + viewSize.x / 2 - 60;
+            float bestscoreY = viewCenter.y - viewSize.y / 2 + 35;
+            float yournameX = viewCenter.x + viewSize.x / 2 - 170;
+            float yournameY = viewCenter.y - viewSize.y / 2 + 95;
+            float yourscoreX = viewCenter.x + viewSize.x / 2 - 60;
+            float yourscoreY = viewCenter.y - viewSize.y / 2 + 100;
+            bestname.setPosition(bestnameX, bestnameY);
+            bestscore.setPosition(bestscoreX, bestscoreY);
+            yourname.setPosition(yournameX, yournameY);
+            yourscore.setPosition(yourscoreX, yourscoreY);
+            window.draw(bestname);
+            window.draw(bestscore);
+            window.draw(yourname);
+            window.draw(yourscore);
 
             // 繪製其他玩家
             // 渲染

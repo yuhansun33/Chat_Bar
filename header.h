@@ -35,6 +35,9 @@
 #define LOGINMODE    4
 #define REGISTERMODE 5
 #define ESCMODE      6
+#define TIMEMODE     7
+#define SQLMODE      8
+#define RANKMODE     9
 
 #define REG_SUCCESS    0
 #define REG_REPEAT     1

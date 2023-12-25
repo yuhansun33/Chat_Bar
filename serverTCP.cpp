@@ -127,6 +127,7 @@ void serverTCP::login_handle(sqlServer& sqlServer) {
     }
 }
 void serverTCP::game_mainloop(){
+    sqlServer sqlServer;
     while (true) {
         rset = allset;
         n = select(maxfd + 1, &rset, NULL, NULL, NULL);
@@ -135,7 +136,7 @@ void serverTCP::game_mainloop(){
             //accept
             if(accept_client() != false){
                 //new client handle
-                new_game_handle();
+                new_game_handle(sqlServer);
             }
         }
         //看每個 client
@@ -143,7 +144,7 @@ void serverTCP::game_mainloop(){
             sockfd = player.second.sockfd;
             if(FD_ISSET(sockfd, &rset)){
                 //handle every client
-                game_handle();
+                game_handle(sqlServer);
             }
         }
         //disconnect list handle
@@ -154,7 +155,7 @@ void serverTCP::game_mainloop(){
         }
     }
 }
-void serverTCP::game_handle(){
+void serverTCP::game_handle(sqlServer& sqlServer){
     Packet packet = receiveData_game(sockfd);
     std::cout << "sender: " << packet.sender_name << " (" << packet.x_packet << ", " << packet.y_packet << ")" << std::endl;
     std::cout << "player num : " << players.size() << std::endl;
@@ -198,8 +199,29 @@ void serverTCP::game_handle(){
         sendData(new_packet, receiver_sockfd);
         std::cout << " ==> " << packet.receiver_name << std::endl;
     }
+    if(packet.mode_packet == TIMEMODE){
+        std::cout << "收到 time mode" << std::endl;
+        int self_sockfd = players[packet.sender_name].sockfd;
+        //time mode
+        std::string lenth(packet.message);
+        sqlServer.db_timelen(packet.sender_name, lenth);
+        sqlServer.addtimelen_check();
+        //get self total time
+        float totalTime = sqlServer.getSelfTotalTime();
+        char totalTime_char[10];
+        sprintf(totalTime_char, "%.1f", totalTime);
+        Packet new_packet(TIMEMODE, packet.sender_name, "", 0, 0, totalTime_char);
+        sendData(new_packet, self_sockfd);
+        std::cout << "send time: " << totalTime_char << std::endl;
+        //get max time
+        std::pair<std::string, float> maxTime = sqlServer.getUserMaxTime();
+        char maxTime_char[10];
+        sprintf(maxTime_char, "%.1f", maxTime.second);
+        Packet new_packet2(RANKMODE, maxTime.first, "", 0, 0, maxTime_char);
+        broadcast_xy(new_packet2, -500); //broadcast 給所有人
+    }
 }
-void serverTCP::new_game_handle(){
+void serverTCP::new_game_handle(sqlServer& sqlServer){
     //init packet
     Packet init_packet(INITMODE, "", "", (float)players.size(), 0, "");
     sendData(init_packet, connfd);
@@ -213,6 +235,21 @@ void serverTCP::new_game_handle(){
     //放入 vector
     Player new_player(connfd, MAPMODE, packet.x_packet, packet.y_packet);
     players[packet.sender_name] = new_player;
+    //資料庫放入名字
+    sqlServer.db_information(packet.sender_name, "");
+    //發送個人累積聊天時間
+    float totalTime = sqlServer.getSelfTotalTime();
+    char totalTime_char[10];
+    sprintf(totalTime_char, "%.1f", totalTime);
+    Packet new_packet(TIMEMODE, packet.sender_name, "", 0, 0, totalTime_char);
+    sendData(new_packet, connfd);
+    std::cout << "send time: " << totalTime_char << std::endl;
+    //發送最大聊天時間
+    std::pair<std::string, float> maxTime = sqlServer.getUserMaxTime();
+    char maxTime_char[10];
+    sprintf(maxTime_char, "%.1f", maxTime.second);
+    Packet new_packet2(RANKMODE, maxTime.first, "", 0, 0, maxTime_char);
+    broadcast_xy(new_packet2, -500); //broadcast 給所有人
 }
 std::string serverTCP::serialize(Packet packet){
     std::string data = packet.packet_to_json().dump();
@@ -312,18 +349,19 @@ void sqlServer::db_information(std::string new_user_name, std::string new_user_p
     this->user_name = new_user_name;
     this->user_password = new_user_password;
 }
+void sqlServer::db_timelen(std::string name, std::string new_timelen){
+    this->user_name = name;
+    this->timelen = new_timelen;
+}
 void sqlServer::db_clear(){
-    std::cout << "db_clear1" << std::endl;
     if(res != NULL){
         delete res;
         res = NULL;
     }
-    std::cout << "db_clear2" << std::endl;
     if(prep_stmt != NULL){
         delete prep_stmt;
         prep_stmt = NULL;
     }
-    std::cout << "db_clear3" << std::endl;
 }
 void sqlServer::db_pswd_select(){
     //query
@@ -373,6 +411,20 @@ void sqlServer::db_user_insert(){
         perror("SQLException");
     }
 }
+void sqlServer::db_time_insert(){
+    try {
+        //insert
+        prep_stmt = con->prepareStatement("INSERT INTO timeRecord (UserName, timeLen) VALUES (?, ?)");
+        prep_stmt->setString(1, user_name);
+        prep_stmt->setString(2, timelen);
+        std::cout << "user_name: " << user_name << std::endl;
+        std::cout << "timelen: " << timelen << std::endl;
+        
+        affectedRows = prep_stmt->executeUpdate();
+    } catch (sql::SQLException &e) {
+        perror("SQLException");
+    }
+}
 int sqlServer::db_register(){
     if(register_check() == true){ return REG_REPEAT; }
     db_user_insert();
@@ -386,4 +438,54 @@ int sqlServer::db_register(){
     }else{
         return REG_FAIL;
     }
+}
+void sqlServer::addtimelen_check(){
+    db_time_insert();
+    db_clear();
+    if(affectedRows > 0){
+        std::cout << "add time success" << std::endl;
+    }else{
+        perror("add time fail");
+    }
+}
+float sqlServer::getSelfTotalTime(){
+    std::cout << "getSelfTotalTime" << std::endl;
+    float totalTime = 0.0f;
+    try {
+        //查詢
+        prep_stmt = con->prepareStatement("SELECT SUM(timeLen) AS TotalTime FROM timeRecord WHERE UserName = ?");
+        prep_stmt->setString(1, user_name);
+        res = prep_stmt->executeQuery();
+        if (res->next()) {
+            totalTime = res->getDouble("TotalTime");
+        }
+    } catch (sql::SQLException &e) {
+        perror("SQLException");
+    }
+    db_clear();
+    return totalTime;
+}
+std::pair<std::string, float> sqlServer::getUserMaxTime() {
+    std::cout << "getUserWithMaxTime" << std::endl;
+    std::string maxUserName;
+    float maxTotalTime = 0.0f;
+
+    try {
+        // 查詢最大時間總和的用戶
+        prep_stmt = con->prepareStatement("SELECT UserName, SUM(timeLen) AS TotalTime FROM timeRecord GROUP BY UserName ORDER BY SUM(timeLen) DESC LIMIT 1");
+        res = prep_stmt->executeQuery();
+
+        // 獲取結果
+        if (res->next()) {
+            maxUserName = res->getString("UserName");
+            maxTotalTime = res->getDouble("TotalTime");
+        }
+    } catch (sql::SQLException &e) {
+        perror("SQLException");
+    }
+
+    db_clear();
+    std::cout << "Max User: " << maxUserName << ", Total Time: " << maxTotalTime << std::endl;
+
+    return std::make_pair(maxUserName, maxTotalTime);
 }
