@@ -13,6 +13,7 @@ public:
     sf::Sprite requestSprite;
     sf::Texture chatroomTexture;
     sf::Sprite chatroomSprite;
+    bool changeView = false;
 
     ChatEnvironment(){
         if (!requestTexture.loadFromFile("Assets/Pictures/request.png")) {
@@ -140,6 +141,11 @@ int main(int argc, char** argv) {
         perror("字體加載失敗");
         return -1;
     }
+    sf::Font chatfont;
+    if (!chatfont.loadFromFile("Assets/Fonts/chat_font.ttf")) {
+        perror("字體加載失敗");
+        return -1;
+    }
     // 定義顏色
     sf::Color brown(139, 69, 19);
     sf::Color LavenderBlush(255, 240, 245);
@@ -186,15 +192,16 @@ int main(int argc, char** argv) {
     requestText.setCharacterSize(30);
     requestText.setFillColor(brown);
     sf::Text chatRecord;
-    chatRecord.setFont(font);
+    chatRecord.setFont(chatfont);
     chatRecord.setCharacterSize(30);
     chatRecord.setFillColor(sf::Color::White);
-    chatRecord.setPosition(90, 520);
     std::string chatHistory;
     std::string userInput;
     // 設置文字框
     sf::RectangleShape inputBox(sf::Vector2f(300, 35));
     inputBox.setFillColor(sf::Color::White);
+    // 設置初始聊天視角
+    
 
     // 遊戲主循環
     bool isWindowFocused = true;
@@ -214,18 +221,28 @@ int main(int argc, char** argv) {
             }
             if(event.type == sf::Event::KeyPressed){
                 if(event.key.code == sf::Keyboard::Enter){
+                    if(userInput.empty()) continue;
                     std::cout << "userInput: " << userInput << std::endl;
                     Packet chatPacket(CHATMODE, name, chatEnv.ReqReceiver.c_str(), 0, 0, userInput.c_str());
                     TCPdata.sendData(chatPacket);
                     chatHistory += name + "  :  " + userInput + "\n";
                     std::cout << "chatHistory: \n" << chatHistory << std::endl;
                     userInput.clear();
+                    //移動視角
+                    chatEnv.chatroomSprite.move(0, MOVEDISTANCE); // 向上移动背景图
+                    view.move(0, MOVEDISTANCE); // 向上移动视图
+                    window.setView(view);
+                    inputBox.move(0, MOVEDISTANCE);
+                    chatEnv.changeView = true;
                 }
                 if (chatEnv.InChatMode && event.key.code == sf::Keyboard::Escape) {
-                    std::string message =  name + " has left the chatroom.\nPress Esc back to map.";
-                    Packet chatPacket(CHATMODE, name, chatEnv.ReqReceiver.c_str(), 0, 0, message.c_str());
+                    std::string message =  name + " left the chatroom.\nPress Esc back to map.";
+                    Packet chatPacket(ESCMODE, name, chatEnv.ReqReceiver.c_str(), 0, 0, message.c_str());
                     TCPdata.sendData(chatPacket);
+                    std::cout << "發送離開聊天室訊息" << std::endl;
                     chatHistory += message + "\n";
+                    chatEnv.changeView = true;
+                    // 回到地圖模式
                     chatEnv.InChatMode = false;
                 }
             }
@@ -301,6 +318,9 @@ int main(int argc, char** argv) {
                         std::cout << "收到聊天同意" << std::endl;
                         chatEnv.RequestSent = false;
                         chatEnv.InChatMode = true;
+                        //重設聊天室
+                        chatEnv.changeView = false;
+                        chatHistory.clear();
                         userInput.clear();
                     }else if(strcmp(updatePacket.message, "Can not chat") == 0){
                         std::cout << "收到聊天拒絕" << std::endl;
@@ -331,6 +351,9 @@ int main(int argc, char** argv) {
                     TCPdata.sendData(chatRequestPacket);
                     chatEnv.HasRequest = false;
                     chatEnv.InChatMode = true;
+                    //重設聊天室
+                    chatEnv.changeView = false;
+                    chatHistory.clear();
                     userInput.clear();
                     std::cout << "按下Y" << std::endl;
                     // 進入聊天模式
@@ -339,9 +362,7 @@ int main(int argc, char** argv) {
                     Packet chatRequestPacket(REQMODE, name, chatEnv.ReqSender.c_str(), 0, 0, "No");
                     TCPdata.sendData(chatRequestPacket);
                     chatEnv.HasRequest = false;
-                    std::cout << "按下N" << std::endl;
-                    // 回到地圖模式、告訴伺服器
-                        
+                    std::cout << "按下N" << std::endl;                        
                 }
             }   
 
@@ -370,10 +391,6 @@ int main(int argc, char** argv) {
             }
         //地圖模式結束
         }else if(chatEnv.InChatMode == true){
-            while(window.pollEvent(event)){
-            }
-
-
             // 聊天模式
             while(true){
                 Packet packet = TCPdata.receiveDataNonBlock();
@@ -386,6 +403,24 @@ int main(int argc, char** argv) {
                     std::string messageText(packet.message);
                     chatHistory +=  senderName + "  :  " + messageText + "\n";
                     std::cout << "chatHistory: \n" << chatHistory << std::endl;
+                    //移動視角
+                    chatEnv.chatroomSprite.move(0, MOVEDISTANCE); // 向上移动背景图
+                    view.move(0, MOVEDISTANCE); // 向上移动视图
+                    window.setView(view);
+                    inputBox.move(0, MOVEDISTANCE);
+                    chatEnv.changeView = true;
+                }
+                if(packet.mode_packet == ESCMODE){
+                    std::cout << "收到離開聊天室訊息" << std::endl;
+                    std::string messageText(packet.message);
+                    chatHistory += messageText + "\n";
+                    std::cout << "chatHistory: \n" << chatHistory << std::endl;
+                    //移動視角
+                    chatEnv.chatroomSprite.move(0, 2 * MOVEDISTANCE); // 向上移动背景图
+                    view.move(0, 2 * MOVEDISTANCE); // 向上移动视图
+                    window.setView(view);
+                    inputBox.move(0, 2 * MOVEDISTANCE);
+                    chatEnv.changeView = true;
                 }
             }
 
@@ -396,10 +431,14 @@ int main(int argc, char** argv) {
             sf::FloatRect spriteBounds = chatEnv.chatroomSprite.getGlobalBounds();
             sf::Vector2f spriteCenter(spriteBounds.left + spriteBounds.width / 2.0f,
                                     spriteBounds.top + spriteBounds.height / 2.0f);
-            view.setCenter(spriteCenter);
-            window.setView(view);
-            inputBox.setPosition(chatEnv.chatroomSprite.getPosition().x + spriteBounds.width / 3.3f,
-                         chatEnv.chatroomSprite.getGlobalBounds().height - 65);
+            if(chatEnv.changeView == false){
+                view.setCenter(spriteCenter);
+                window.setView(view);
+                inputBox.setPosition(chatEnv.chatroomSprite.getPosition().x + spriteBounds.width / 3.3f,
+                            chatEnv.chatroomSprite.getPosition().y + spriteBounds.height / 1.115f);
+                chatRecord.setPosition(chatEnv.chatroomSprite.getPosition().x + spriteBounds.width / 8.5f,
+                            chatEnv.chatroomSprite.getPosition().y + spriteBounds.height / 1.14f);
+            }
             
             chatRecord.setString(chatHistory);
             window.clear();
@@ -407,7 +446,7 @@ int main(int argc, char** argv) {
             window.draw(chatEnv.chatroomSprite);
             window.draw(inputBox);
 
-            sf::Text enterInput(userInput, font, 30);
+            sf::Text enterInput(userInput, chatfont, 30);
             enterInput.setPosition(inputBox.getPosition().x + 5, inputBox.getPosition().y);
             enterInput.setFillColor(sf::Color::Black);
             window.draw(enterInput);

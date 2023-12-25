@@ -190,6 +190,14 @@ void serverTCP::game_handle(){
         sendData(new_packet, receiver_sockfd);
         std::cout << " ==> " << packet.receiver_name << std::endl;
     }
+    if(packet.mode_packet == ESCMODE){
+        //esc mode
+        int receiver_sockfd = players[packet.receiver_name].sockfd;
+        std::cout << "send esc message: " << packet.sender_name;
+        Packet new_packet(ESCMODE, packet.sender_name, packet.receiver_name, 0, 0, packet.message);
+        sendData(new_packet, receiver_sockfd);
+        std::cout << " ==> " << packet.receiver_name << std::endl;
+    }
 }
 void serverTCP::new_game_handle(){
     //init packet

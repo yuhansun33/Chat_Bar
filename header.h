@@ -34,6 +34,7 @@
 #define INITMODE     3
 #define LOGINMODE    4
 #define REGISTERMODE 5
+#define ESCMODE      6
 
 #define REG_SUCCESS    0
 #define REG_REPEAT     1
@@ -44,6 +45,7 @@
 #define NAMELINE            128
 #define MAXLINE             4096
 #define LISTENQ             1024
+#define MOVEDISTANCE        37
 #define SA                  struct sockaddr
 #define SERVERIP            "127.0.0.1"
 #define SQLPASSWD           "eee3228133@"
