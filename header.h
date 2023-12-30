@@ -43,6 +43,12 @@
 #define REG_SUCCESS    0
 #define REG_REPEAT     1
 #define REG_FAIL       2
+
+#define CHATSTATENONE  0
+#define CHATSTATERECV  1
+#define CHATSTATESEND  2
+#define CHATSTATECHAT  3
+
 #define NOWHERE             -500         
 #define CHATDISTANCE        100
 #define GAMEPORT            11130
