@@ -26,6 +26,7 @@ public:
     std::string serialize(Packet packet);
     std::string get_player_name(int sockfd);
     int enter_roomList(std::string name1, std::string name2);
+    char* int_to_char(int num);
     
 private:
 	int			        n, listenfd, connfd, sockfd;
