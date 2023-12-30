@@ -162,6 +162,8 @@ void serverTCP::game_handle(sqlServer& sqlServer){
     if(packet.mode_packet == MAPMODE){
         //map mode
         Packet new_packet(MAPMODE, packet.sender_name, "", packet.x_packet, packet.y_packet, "");
+        players[packet.sender_name].x_player = packet.x_packet;
+        players[packet.sender_name].y_player = packet.y_packet;
         broadcast_xy(new_packet, sockfd);
     }
     if(packet.mode_packet == REQMODE){
@@ -176,6 +178,7 @@ void serverTCP::game_handle(sqlServer& sqlServer){
         }else if(strcmp(packet.message, "Yes") == 0){
             Packet new_packet(REQMODE, packet.sender_name, packet.receiver_name, 0, 0, "Can chat");
             sendData(new_packet, receiver_sockfd);
+            int roomID = enter_roomList(packet.sender_name, packet.receiver_name);
             std::cout << "recv Yes, send \"Can chat\"" << std::endl;
         }else if(strcmp(packet.message, "No") == 0){
             Packet new_packet(REQMODE, packet.sender_name, packet.receiver_name, 0, 0, "Can not chat");
@@ -325,6 +328,19 @@ std::string serverTCP::get_player_name(int sockfd){
         }
     }
     return NULL;
+}
+int serverTCP::enter_roomList(std::string name1, std::string name2){
+    //找空的聊天室
+    for(size_t i = 0; i < roomList.size(); i++){
+        if(roomList[i].empty()){
+            roomList[i].push_back(name1);
+            roomList[i].push_back(name2);
+            return i;
+        }
+    }
+    //沒有空的聊天室
+    roomList.push_back(std::vector<std::string>{name1, name2});
+    return roomList.size() - 1;
 }
 //======= sqlServer
 sqlServer::sqlServer(){

@@ -25,6 +25,7 @@ public:
     Packet deserialize(std::string& json_string);
     std::string serialize(Packet packet);
     std::string get_player_name(int sockfd);
+    int enter_roomList(std::string name1, std::string name2);
     
 private:
 	int			        n, listenfd, connfd, sockfd;
@@ -35,6 +36,7 @@ private:
 
     std::unordered_map<std::string, struct Player> players;
     std::unordered_map<int, std::string> disconnect_list; //name, sockfd
+    std::vector<std::vector<std::string>> roomList;
 };
 
 class sqlServer{
