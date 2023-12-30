@@ -20,6 +20,7 @@
 #include <mysql_driver.h>
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <nlohmann/json.hpp>
 #include <mysql_connection.h>
 #include <cppconn/resultset.h>
@@ -42,6 +43,7 @@
 #define REG_SUCCESS    0
 #define REG_REPEAT     1
 #define REG_FAIL       2
+#define NOWHERE             -500         
 #define CHATDISTANCE        100
 #define GAMEPORT            11130
 #define LOGINPORT           11131
