@@ -6,7 +6,7 @@ sf::RenderWindow window;
 sf::Texture mapTexture;
 sf::Texture characterTexture;
 sf::Font font;
-sf::Font chatfont;
+sf::Font chatFont;
 sf::Music bgm;
 sf::Sprite mapSprite;
 sf::Color lavenderBlush;
@@ -14,25 +14,22 @@ sf::Color brown;
 
 class ChatEnvironment{
     private:
-        bool isRequestRecv;
-        bool isRequestSend;
-        bool isChatting;
+        int chatState;
         bool changeView;
-
-        std::string requestSender;
-        std::string requestReceiver;
-
+        std::string requestSenderName;
+        std::string requestReceiverName;
         sf::Texture requestTexture;
-        sf::Sprite requestSprite;
-
         sf::Texture chatroomTexture;
+        sf::Sprite requestSprite;
         sf::Sprite chatroomSprite;
-
         sf::Clock chatClock;
+        sf::Text requestText;
+        sf::Text chatRecord;
+        std::string chatHistory;
+        std::string userInput;
+        sf::RectangleShape chatInputBox;
     public:
-        ChatEnvironment(bool RequestRecv = false,   bool RequestSend = false, 
-                        bool Chatting = false,      bool changeView = false, 
-                        std::string requestReceiver, ){
+        ChatEnvironment(){
             if (!requestTexture.loadFromFile("Assets/Pictures/request.png")) {
                 perror("request圖片加載失敗");
                 exit(-1);
@@ -41,10 +38,18 @@ class ChatEnvironment{
                 perror("chatroom圖片加載失敗");
                 exit(-1);
             }
+            chatInputBox.setSize(sf::Vector2f(300, 35));
+            chatInputBox.setFillColor(sf::Color::White);
             requestSprite.setTexture(requestTexture);
             requestSprite.setScale(0.5f, 0.5f);
             chatroomSprite.setTexture(chatroomTexture);
             chatroomSprite.setScale(0.45f, 0.35f);
+            requestText.setFont(font);
+            requestText.setCharacterSize(30);
+            requestText.setFillColor(brown);
+            chatRecord.setFont(chatFont);
+            chatRecord.setCharacterSize(30);
+            chatRecord.setFillColor(sf::Color::White);
         }
         void startTimer(){chatClock.restart();}
         sf::Time getChatTime(){return chatClock.getElapsedTime();}
@@ -57,10 +62,10 @@ class Character {
         sf::Vector2f characterPosition;
     public:
         Character(){};
-        Character(sf::Texture& texture, sf::Font& font, std::string name, float x, float y){
+        Character(std::string name, float x, float y){
             characterPosition.x = x;
             characterPosition.y = y;
-            characterSprite.setTexture(texture);
+            characterSprite.setTexture(characterTexture);
             characterSprite.setScale(0.08f, 0.08f);
             characterSprite.setPosition(characterPosition);
             characterName.setString(name);
@@ -84,13 +89,12 @@ class Character {
             characterSprite.setPosition(characterPosition);
             characterName.setPosition(characterPosition.x + 20, characterPosition.y - 20);
         }
-        void Draw(sf::RenderWindow& window) {
+        void draw() {
             window.draw(characterSprite);
             window.draw(characterName);
         }
-        bool mainCharacterMove(bool isWindowFocused) {
+        bool mainCharacterMove() {
             bool Changed = false; 
-            if (!isWindowFocused) return Changed;
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
                 move(0, -2.7f);
                 Changed = true;
@@ -187,7 +191,7 @@ class Rank {
             yourRankName.setPosition(viewCenter.x + viewSize.x / 2 - 170, viewCenter.y - viewSize.y / 2 + 95);
             yourRankScore.setPosition(viewCenter.x + viewSize.x / 2 - 60, viewCenter.y - viewSize.y / 2 + 100);
         }
-        void Draw(){
+        void draw(){
             window.draw(bestRankFrame);
             window.draw(yourRankFrame);
             window.draw(bestRankText);
@@ -209,14 +213,14 @@ class Rank {
         };
 };
 
-class otherCharacters{
+class OtherCharacters{
     private:
         float minDistance;
         std::string minDistanceCharacterName;
         std::unordered_map<std::string, OtherCharacter> otherCharactersMap;
         sf::Text informOtherCharacterNearBy;
     public:
-        otherCharacters(ClientConnectToServer &TCPdata){
+        OtherCharacters(ClientConnectToServer &TCPdata){
             informOtherCharacterNearBy.setFont(font);
             informOtherCharacterNearBy.setCharacterSize(50);
             informOtherCharacterNearBy.setFillColor(lavenderBlush);
@@ -232,6 +236,9 @@ class otherCharacters{
                 }
             }
         };
+        void drawAllOtherCharacters(){
+            for(auto& otherCharacter : otherCharactersMap) otherCharacter.second.draw();
+        }
         void updateOtherCharactersByPacket(Character& mainCharacter, Packet& otherCharacterUpdatePacket){
             if(otherCharactersMap.find(otherCharacterUpdatePacket.sender_name) == otherCharactersMap.end()){
                 OtherCharacter otherCharacter(characterTexture, font, otherCharacterUpdatePacket.sender_name, otherCharacterUpdatePacket.x_packet, otherCharacterUpdatePacket.y_packet, mainCharacter.getPosition().x, mainCharacter.getPosition().y);
@@ -245,7 +252,6 @@ class otherCharacters{
             if(otherCharactersMap[otherCharacterUpdatePacket.sender_name].getDistance() < minDistance) {
                 minDistance = otherCharactersMap[otherCharacterUpdatePacket.sender_name].getDistance();
                 minDistanceCharacterName = otherCharacterUpdatePacket.sender_name;
-                // chatEnv.requestReceiver = mainCharacterName;
                 if(minDistance < CHATDISTANCE) {
                     std::string message =  "Press X to ask " + minDistanceCharacterName + " to ChatBar!";
                     informOtherCharacterNearBy.setString(message);
@@ -260,7 +266,6 @@ class otherCharacters{
                 if(otherCharacter.second.getDistance() < minDistance) {
                     minDistance = otherCharacter.second.getDistance();
                     minDistanceCharacterName = otherCharacter.first;
-                    // chatEnv.requestReceiver = mainCharacterName;
                     if(minDistance < CHATDISTANCE) {
                         std::string message =  "Press X to ask " + minDistanceCharacterName + " to ChatBar!";
                         informOtherCharacterNearBy.setString(message);
@@ -272,23 +277,17 @@ class otherCharacters{
         }
 };
 
-void clientPacketHandler(Packet& clientReceivedPacket, ClientConnectToServer& TCPdata, otherCharacters& OCs, Character& mainCharacter, Rank& rank){
-
+void clientPacketHandler(Packet& clientReceivedPacket, ClientConnectToServer& TCPdata, OtherCharacters& OCs, Character& mainCharacter, Rank& rank){
     switch (clientReceivedPacket.mode_packet) {
         case EMPTYMODE:
             break;
         case MAPMODE:
-            OCs.updateOtherCharacters(mainCharacter, clientReceivedPacket);
+            OCs.updateOtherCharactersByPacket(mainCharacter, clientReceivedPacket);
             break;
         // case CHATMODE:    
             // break;
         case REQMODE:
-            if(strcmp(clientReceivedPacket.message, "Connect?") == 0){
-                std::cout << "收到聊天請求" << std::endl;
-                chatEnv.isRequestRecv = true;
-                chatEnv.requestSender = clientReceivedPacket.sender_name;
-                std::cout << "chatEnv.ReqFrom: " << chatEnv.requestSender << std::endl;
-            }
+
             break;
         case TIMEMODE:
             rank.updateTime(clientReceivedPacket.message);
@@ -303,14 +302,13 @@ void clientPacketHandler(Packet& clientReceivedPacket, ClientConnectToServer& TC
 
 int main(int argc, char** argv) {
 
-    brown = sf::Color(139, 69, 19);
-    lavenderBlush = sf::Color(255, 240, 245);
-    
+    brown           = sf::Color(139, 69, 19);
+    lavenderBlush   = sf::Color(255, 240, 245);
+
     if (!bgm.openFromFile("Assets/Musics/bgm.ogg")) {
         perror("音樂加載失敗");
         return -1;
     }
-    // 加載地圖和角色的紋理
     if (!mapTexture.loadFromFile("Assets/Pictures/map.png")) {
         perror("地圖加載失敗");
         return -1;
@@ -323,10 +321,12 @@ int main(int argc, char** argv) {
         perror("字體加載失敗");
         return -1;
     }
-    if (!chatfont.loadFromFile("Assets/Fonts/chat_font.ttf")) {
+    if (!chatFont.loadFromFile("Assets/Fonts/chat_font.ttf")) {
         perror("字體加載失敗");
         return -1;
     }
+    mapSprite.setTexture(mapTexture);
+    mapSprite.setScale(2.5f, 2.5f);
 
     ClientConnectToServer TCPdata;
     TCPdata.serverIPPort(SERVERIP, GAMEPORT);
@@ -335,10 +335,6 @@ int main(int argc, char** argv) {
     Packet mainCharacterPacket(MAPMODE, name, "", initPosition.x, initPosition.y, "");
     window.create(sf::VideoMode(500, 500), "ChatBar");
     window.setFramerateLimit(60);
-
-
-    // 定義顏色
-
     bgm.setLoop(true);
     bgm.play();
 
@@ -362,40 +358,14 @@ int main(int argc, char** argv) {
     // 設置聊天環境
     ChatEnvironment chatEnv;
 
-    mapSprite.setTexture(mapTexture);
-    mapSprite.setScale(2.5f, 2.5f);
-
     // 設置主角
-    Character mainCharacter(characterTexture, font, name, mainCharacterPacket.x_packet, mainCharacterPacket.y_packet);
+    Character mainCharacter(name, mainCharacterPacket.x_packet, mainCharacterPacket.y_packet);
 
     view.reset(sf::FloatRect(0.f, 0.f, 800.f, 600.f));
     view.setCenter(mainCharacter.getPosition());
     
     // Nonblock模式
     TCPdata.turnOnNonBlock();
-
-    // 設置文字
-    // sf::Text systemMessage;
-    // systemMessage.setFont(font);  
-    // systemMessage.setCharacterSize(50);  
-    // systemMessage.setFillColor(LavenderBlush);  
-
-    sf::Text requestText;
-    requestText.setFont(font);
-    requestText.setCharacterSize(30);
-    requestText.setFillColor(brown);
-
-    sf::Text chatRecord;
-    chatRecord.setFont(chatfont);
-    chatRecord.setCharacterSize(30);
-    chatRecord.setFillColor(sf::Color::White);
-
-    std::string chatHistory;
-    std::string userInput;
-
-    // 設置文字框
-    sf::RectangleShape inputBox(sf::Vector2f(300, 35));
-    inputBox.setFillColor(sf::Color::White);
 
     Rank rank(font, name);
 
@@ -458,11 +428,14 @@ int main(int argc, char** argv) {
                 }
             }
         }
+
+
+
         // 地圖模式
         if(chatEnv.isChatting == false){
-            std::string mainCharacterName;
-            float minDistance = 100000000;
-            if (mainCharacter.mainCharacterMove(isWindowFocused)) {
+            // std::string mainCharacterName;
+            // float minDistance = 100000000;
+            if (mainCharacter.mainCharacterMove()) {
                 Packet packet(MAPMODE, name, "", mainCharacter.getPosition().x, mainCharacter.getPosition().y, "");
                 TCPdata.sendData(packet);
                 // for(auto& otherCharacter : otherCharacters){
@@ -597,8 +570,8 @@ int main(int argc, char** argv) {
             // 繪製其他玩家
             // 渲染
             for(auto& otherCharacter : otherCharacters) otherCharacter.second.Draw(window);
-            rank.setPosition(viewCenter, viewSize);
-            rank.Draw(window);
+            rank.setPosition(view);
+            rank.Draw();
 
             if(!chatEnv.isRequestRecv){
                 float systemMessageX = viewCenter.x - viewSize.x / 2 + 10;  
@@ -668,12 +641,11 @@ int main(int argc, char** argv) {
             window.draw(chatEnv.chatroomSprite);
             window.draw(inputBox);
 
-            sf::Text enterInput(userInput, chatfont, 30);
+            sf::Text enterInput(userInput, chatFont, 30);
             enterInput.setPosition(inputBox.getPosition().x + 5, inputBox.getPosition().y);
             enterInput.setFillColor(sf::Color::Black);
             window.draw(enterInput);
         }
-        // 顯示
         window.display();
     }
     return 0;
