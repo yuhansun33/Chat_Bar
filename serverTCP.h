@@ -25,8 +25,9 @@ public:
     Packet deserialize(std::string& json_string);
     std::string serialize(Packet packet);
     std::string get_player_name(int sockfd);
-    int enter_roomList(std::string name1, std::string name2);
-    char* int_to_char(int num);
+    void getNewRoom(std::string name1, std::string name2);
+    void broadcastMaxTime(sqlServer& sqlServer);
+    void sendSelfTotalTime(sqlServer& sqlServer, char* name, int sockfd);
     
 private:
 	int			        n, listenfd, connfd, sockfd;
@@ -48,9 +49,8 @@ public:
     int db_register();
     bool login_check();
     bool register_check();
-    void addtimelen_check();
+    void addtimelen(std::string name, char* msg);
     void db_information(std::string new_user_name, std::string new_user_password);
-    void db_timelen(std::string name, std::string new_timelen);
     void db_query();
     void db_clear();
     void db_pswd_select();

@@ -159,77 +159,63 @@ void serverTCP::game_handle(sqlServer& sqlServer){
     Packet packet = receiveData_game(sockfd);
     std::cout << "sender: " << packet.sender_name << " (" << packet.x_packet << ", " << packet.y_packet << ")" << std::endl;
     std::cout << "player num : " << players.size() << std::endl;
-    if(packet.mode_packet == MAPMODE){
-        //map mode
-        Packet new_packet(MAPMODE, packet.sender_name, "", packet.x_packet, packet.y_packet, "");
-        players[packet.sender_name].x_player = packet.x_packet;
-        players[packet.sender_name].y_player = packet.y_packet;
-        broadcast_xy(new_packet, sockfd);
-    }
-    if(packet.mode_packet == REQMODE){
-        //request mode
-        int receiver_sockfd = players[packet.receiver_name].sockfd;
-        std::cout << "receiver_sockfd: " << receiver_sockfd << std::endl;
-        if(strcmp(packet.message, "first request") == 0){
-            std::cout << "get first request" << std::endl;
-            Packet new_packet(REQMODE, packet.sender_name, packet.receiver_name, 0, 0, "Connect?");
-            sendData(new_packet, receiver_sockfd);
-            std::cout << "send \"Connect?\"" << std::endl;
-        }else if(strcmp(packet.message, "Yes") == 0){
-            Packet new_packet(REQMODE, packet.sender_name, packet.receiver_name, 0, 0, "Can chat");
-            sendData(new_packet, receiver_sockfd);
-            std::cout << "recv Yes, send \"Can chat\"" << std::endl;
-            //add into roomList
-            int roomID = enter_roomList(packet.sender_name, packet.receiver_name);
-            char roomID_char[10];
-            sprintf(roomID_char, "%d", roomID);
-            //broadcast 給所有人
-            float x_room = (players[packet.sender_name].x_player + players[packet.receiver_name].x_player) / 2;
-            float y_room = (players[packet.sender_name].y_player + players[packet.receiver_name].y_player) / 2;
-            Packet room_packet(ROOMMODE, "", "", x_room, y_room, roomID_char);
-            broadcast_xy(room_packet, -500);
-        }else if(strcmp(packet.message, "No") == 0){
-            Packet new_packet(REQMODE, packet.sender_name, packet.receiver_name, 0, 0, "Can not chat");
-            sendData(new_packet, receiver_sockfd);
-            std::cout << "recv No, send \"Can not chat\"" << std::endl;
+
+    switch(packet.mode_packet) {
+        case MAPMODE: {
+            //更新位置
+            players[packet.sender_name].x_player = packet.x_packet;
+            players[packet.sender_name].y_player = packet.y_packet;
+            Packet new_packet(MAPMODE, packet.sender_name, "", packet.x_packet, packet.y_packet, "");
+            broadcast_xy(new_packet, sockfd);
+            break;
         }
-    }
-    if(packet.mode_packet == CHATMODE){
-        //chat mode
-        int receiver_sockfd = players[packet.receiver_name].sockfd;
-        std::cout << "send chat message: " << packet.sender_name << std::endl;
-        Packet new_packet(CHATMODE, packet.sender_name, packet.receiver_name, 0, 0, packet.message);
-        sendData(new_packet, receiver_sockfd);
-        std::cout << " ==> " << packet.receiver_name << std::endl;
-    }
-    if(packet.mode_packet == ESCMODE){
-        //esc mode
-        int receiver_sockfd = players[packet.receiver_name].sockfd;
-        std::cout << "send esc message: " << packet.sender_name;
-        Packet new_packet(ESCMODE, packet.sender_name, packet.receiver_name, 0, 0, packet.message);
-        sendData(new_packet, receiver_sockfd);
-        std::cout << " ==> " << packet.receiver_name << std::endl;
-    }
-    if(packet.mode_packet == TIMEMODE){
-        std::cout << "收到 time mode" << std::endl;
-        int self_sockfd = players[packet.sender_name].sockfd;
-        //time mode
-        std::string lenth(packet.message);
-        sqlServer.db_timelen(packet.sender_name, lenth);
-        sqlServer.addtimelen_check();
-        //get self total time
-        float totalTime = sqlServer.getSelfTotalTime();
-        char totalTime_char[10];
-        sprintf(totalTime_char, "%.1f", totalTime);
-        Packet new_packet(TIMEMODE, packet.sender_name, "", 0, 0, totalTime_char);
-        sendData(new_packet, self_sockfd);
-        std::cout << "send time: " << totalTime_char << std::endl;
-        //get max time
-        std::pair<std::string, float> maxTime = sqlServer.getUserMaxTime();
-        char maxTime_char[10];
-        sprintf(maxTime_char, "%.1f", maxTime.second);
-        Packet new_packet2(RANKMODE, maxTime.first, "", 0, 0, maxTime_char);
-        broadcast_xy(new_packet2, -500); //broadcast 給所有人
+        case REQMODE: {
+            int receiver_sockfd = players[packet.receiver_name].sockfd;
+            std::cout << "receiver_sockfd: " << receiver_sockfd << std::endl;
+            if(strcmp(packet.message, "first request") == 0){
+                Packet new_packet(REQMODE, packet.sender_name, packet.receiver_name, 0, 0, "Connect?");
+                sendData(new_packet, receiver_sockfd);
+                std::cout << "get first request, send \"Connect?\"" << std::endl;
+            }else if(strcmp(packet.message, "Yes") == 0){
+                Packet new_packet(REQMODE, packet.sender_name, packet.receiver_name, 0, 0, "Can chat");
+                sendData(new_packet, receiver_sockfd);
+                std::cout << "recv Yes, send \"Can chat\"" << std::endl;
+                //加入 roomList 並 broadcast
+                getNewRoom(packet.sender_name, packet.receiver_name);
+            }else if(strcmp(packet.message, "No") == 0){
+                Packet new_packet(REQMODE, packet.sender_name, packet.receiver_name, 0, 0, "Can not chat");
+                sendData(new_packet, receiver_sockfd);
+                std::cout << "recv No, send \"Can not chat\"" << std::endl;
+            }
+            break;
+        }
+        case CHATMODE: {
+            int receiver_sockfd = players[packet.receiver_name].sockfd;
+            std::cout << "send chat message: " << packet.sender_name << std::endl;
+            Packet new_packet(CHATMODE, packet.sender_name, packet.receiver_name, 0, 0, packet.message);
+            sendData(new_packet, receiver_sockfd);
+            std::cout << " ==> " << packet.receiver_name << std::endl;
+            break;
+        }
+        case ESCMODE: {
+            int receiver_sockfd = players[packet.receiver_name].sockfd;
+            std::cout << "send esc message: " << packet.sender_name;
+            Packet new_packet(ESCMODE, packet.sender_name, packet.receiver_name, 0, 0, packet.message);
+            sendData(new_packet, receiver_sockfd);
+            std::cout << " ==> " << packet.receiver_name << std::endl;
+            break;
+        }
+        case TIMEMODE: {
+            std::cout << "收到 time mode" << std::endl;
+            int self_sockfd = players[packet.sender_name].sockfd;
+            //time mode
+            sqlServer.addtimelen(packet.sender_name, packet.message);
+            //發送個人累積聊天時間
+            sendSelfTotalTime(sqlServer, packet.sender_name, self_sockfd);
+            //廣播最大聊天時間
+            broadcastMaxTime(sqlServer);
+            break;
+        }
     }
 }
 void serverTCP::new_game_handle(sqlServer& sqlServer){
@@ -249,18 +235,9 @@ void serverTCP::new_game_handle(sqlServer& sqlServer){
     //資料庫放入名字
     sqlServer.db_information(packet.sender_name, "");
     //發送個人累積聊天時間
-    float totalTime = sqlServer.getSelfTotalTime();
-    char totalTime_char[10];
-    sprintf(totalTime_char, "%.1f", totalTime);
-    Packet new_packet(TIMEMODE, packet.sender_name, "", 0, 0, totalTime_char);
-    sendData(new_packet, connfd);
-    std::cout << "send time: " << totalTime_char << std::endl;
-    //發送最大聊天時間
-    std::pair<std::string, float> maxTime = sqlServer.getUserMaxTime();
-    char maxTime_char[10];
-    sprintf(maxTime_char, "%.1f", maxTime.second);
-    Packet new_packet2(RANKMODE, maxTime.first, "", 0, 0, maxTime_char);
-    broadcast_xy(new_packet2, -500); //broadcast 給所有人
+    sendSelfTotalTime(sqlServer, packet.sender_name, connfd);
+    //廣播最大聊天時間
+    broadcastMaxTime(sqlServer);
 }
 std::string serverTCP::serialize(Packet packet){
     std::string data = packet.packet_to_json().dump();
@@ -337,23 +314,42 @@ std::string serverTCP::get_player_name(int sockfd){
     }
     return NULL;
 }
-int serverTCP::enter_roomList(std::string name1, std::string name2){
+void serverTCP::getNewRoom(std::string name1, std::string name2){
+    bool findRoom = false;
+    static char roomID[10];
     //找空的聊天室
     for(size_t i = 0; i < roomList.size(); i++){
         if(roomList[i].empty()){
             roomList[i].push_back(name1);
             roomList[i].push_back(name2);
-            return i;
+            sprintf(roomID, "%d", i);
+            findRoom = true;
         }
     }
     //沒有空的聊天室
-    roomList.push_back(std::vector<std::string>{name1, name2});
-    return roomList.size() - 1;
+    if(findRoom == false){
+        roomList.push_back(std::vector<std::string>{name1, name2});
+        sprintf(roomID, "%d", roomList.size() - 1);
+    }
+    float x_room = (players[name1].x_player + players[name2].x_player) / 2;
+    float y_room = (players[name1].y_player + players[name2].y_player) / 2;
+    Packet room_packet(ROOMMODE, "", "", x_room, y_room, roomID);
+    broadcast_xy(room_packet, -500); //broadcast 給所有人
 }
-char* serverTCP::int_to_char(int num){
-    char* char_num = new char[10];
-    sprintf(char_num, "%d", num);
-    return char_num;
+void serverTCP::broadcastMaxTime(sqlServer& sqlServer){
+    std::pair<std::string, float> maxTime = sqlServer.getUserMaxTime();
+    char maxTime_char[10];
+    sprintf(maxTime_char, "%.1f", maxTime.second);
+    Packet new_packet(RANKMODE, maxTime.first, "", 0, 0, maxTime_char);
+    broadcast_xy(new_packet, -500); //broadcast 給所有人
+}
+void serverTCP::sendSelfTotalTime(sqlServer& sqlServer, char* name, int sockfd){
+    float totalTime = sqlServer.getSelfTotalTime();
+    char totalTime_char[10];
+    sprintf(totalTime_char, "%.1f", totalTime);
+    Packet new_packet(TIMEMODE, name, "", 0, 0, totalTime_char);
+    sendData(new_packet, sockfd);
+    std::cout << "send time: " << totalTime_char << std::endl;
 }
 //======= sqlServer
 sqlServer::sqlServer(){
@@ -377,10 +373,6 @@ void sqlServer::db_query(){
 void sqlServer::db_information(std::string new_user_name, std::string new_user_password){
     this->user_name = new_user_name;
     this->user_password = new_user_password;
-}
-void sqlServer::db_timelen(std::string name, std::string new_timelen){
-    this->user_name = name;
-    this->timelen = new_timelen;
 }
 void sqlServer::db_clear(){
     if(res != NULL){
@@ -468,7 +460,10 @@ int sqlServer::db_register(){
         return REG_FAIL;
     }
 }
-void sqlServer::addtimelen_check(){
+void sqlServer::addtimelen(std::string name, char* msg){
+    std::string length(msg);
+    this->user_name = name;
+    this->timelen = length;
     db_time_insert();
     db_clear();
     if(affectedRows > 0){
