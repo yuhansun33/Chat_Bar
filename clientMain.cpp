@@ -28,6 +28,223 @@ classes:
     Rank: 計分框的class
 */
 
+class Character {
+    private:
+        sf::Sprite characterSprite;
+        sf::Text characterName;
+        sf::Vector2f characterPosition;
+    public:
+        Character(){};
+        Character(std::string name, float x, float y){
+            characterPosition.x = x;
+            characterPosition.y = y;
+            characterSprite.setTexture(characterTexture);
+            characterSprite.setScale(0.08f, 0.08f);
+            characterSprite.setPosition(characterPosition);
+            characterName.setString(name);
+            characterName.setFont(font);
+            characterName.setCharacterSize(20);
+            characterName.setFillColor(sf::Color::White);
+            characterName.setPosition(characterPosition.x + 20, characterPosition.y - 20);
+        }
+        void move(float x, float y) {
+            characterPosition.x += x;
+            characterPosition.y += y;
+            characterSprite.setPosition(characterPosition);
+            characterName.setPosition(characterPosition.x + 20, characterPosition.y - 20);
+        }
+        sf::Vector2f getPosition() {
+            return characterPosition;
+        }
+        void setPosition(float x, float y) {
+            characterPosition.x = x;
+            characterPosition.y = y;
+            characterSprite.setPosition(characterPosition);
+            characterName.setPosition(characterPosition.x + 20, characterPosition.y - 20);
+        }
+        void draw() {
+            window.draw(characterSprite);
+            window.draw(characterName);
+        }
+        bool mainCharacterMove() {
+            bool Changed = false; 
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+                move(0, -2.7f);
+                Changed = true;
+            }
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+                move(-2.7f, 0);
+                Changed = true;
+            }
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+                move(0, 2.7f);
+                Changed = true;
+            }
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+                move(2.7f, 0);
+                Changed = true;
+            }
+            return Changed;
+        }
+};
+
+class OtherCharacter : public Character {
+    friend class OtherCharacters;
+    private:
+        float distance;
+    public:
+        OtherCharacter(){};
+        OtherCharacter(sf::Texture& texture, sf::Font& font, std::string name, float x, float y, float mx, float my) : Character(name, x, y){
+            refreshDistance(mx, my);
+        }
+        void refreshDistance(float mx, float my) {
+            distance = sqrt(pow(mx - getPosition().x, 2) + pow(my - getPosition().y, 2));
+            std::cout << "distance: " << distance << std::endl;
+        }
+        float getDistance() {
+            return distance;
+        }
+};
+
+class Rank {
+    private:
+        sf::Color frameBackgroundColor, titleTextColor, bestRankTextColor, yourRankTextColor;
+        sf::RectangleShape bestRankFrame, yourRankFrame;
+        sf::Text bestRankText, yourRankText, bestRankName, bestRankScore, yourRankName, yourRankScore;
+    public:
+        Rank(sf::Font& font, std::string name = playerID){
+            frameBackgroundColor = sf::Color(238, 221, 130, 230);
+            titleTextColor = sf::Color(218, 165, 32);
+            bestRankTextColor = sf::Color(205, 92, 92);
+            yourRankTextColor = sf::Color(128, 128, 128);
+
+            bestRankFrame = sf::RectangleShape(sf::Vector2f(180, 60));
+            bestRankFrame.setFillColor(frameBackgroundColor);
+
+            yourRankFrame = sf::RectangleShape(sf::Vector2f(180, 60));
+            yourRankFrame.setFillColor(frameBackgroundColor);
+
+            bestRankText.setFont(font);
+            bestRankText.setCharacterSize(20);
+            bestRankText.setFillColor(titleTextColor);
+            bestRankText.setString("BEST");
+
+            bestRankName.setFont(font);
+            bestRankName.setCharacterSize(25);
+            bestRankName.setFillColor(bestRankTextColor);
+            bestRankName.setString("-"); 
+
+            bestRankScore.setFont(font);
+            bestRankScore.setCharacterSize(20);
+            bestRankScore.setFillColor(bestRankTextColor);
+            bestRankScore.setString("0.0");
+
+            yourRankText.setFont(font);
+            yourRankText.setCharacterSize(20);
+            yourRankText.setFillColor(titleTextColor);
+            yourRankText.setString("YOUR'S");
+
+            yourRankName.setFont(font);
+            yourRankName.setCharacterSize(25);
+            yourRankName.setFillColor(yourRankTextColor);
+            yourRankName.setString(name);
+
+            yourRankScore.setFont(font);
+            yourRankScore.setCharacterSize(20);
+            yourRankScore.setFillColor(yourRankTextColor);
+            yourRankScore.setString("0.0"); 
+        };
+        void setPosition(){
+            sf::Vector2f viewSize = view.getSize();
+            sf::Vector2f viewCenter = view.getCenter();
+            bestRankFrame.setPosition(viewCenter.x + viewSize.x / 2 - 190, viewCenter.y - viewSize.y / 2 + 5);
+            bestRankName.setPosition(viewCenter.x + viewSize.x / 2 - 170, viewCenter.y - viewSize.y / 2 + 30);
+            bestRankScore.setPosition(viewCenter.x + viewSize.x / 2 - 60, viewCenter.y - viewSize.y / 2 + 35);
+            yourRankFrame.setPosition(viewCenter.x + viewSize.x / 2 - 190, viewCenter.y - viewSize.y / 2 + 70);
+            yourRankName.setPosition(viewCenter.x + viewSize.x / 2 - 170, viewCenter.y - viewSize.y / 2 + 95);
+            yourRankScore.setPosition(viewCenter.x + viewSize.x / 2 - 60, viewCenter.y - viewSize.y / 2 + 100);
+        }
+        void draw(){
+            window.draw(bestRankFrame);
+            window.draw(yourRankFrame);
+            window.draw(bestRankText);
+            window.draw(yourRankText);
+            window.draw(bestRankName);
+            window.draw(bestRankScore);
+            window.draw(yourRankName);
+            window.draw(yourRankScore);
+        };
+        void updateTime(char* time){
+            std::string timeStr(time);
+            yourRankScore.setString(time);
+        };
+        void updateRank(char* bestName, char* time){
+            std::string bestNameStr(bestName);
+            std::string timeStr(time);
+            bestRankName.setString(bestNameStr);
+            bestRankScore.setString(timeStr);
+        };
+};
+
+class OtherCharacters{
+    private:
+        float minDistance;
+        std::string minDistanceCharacterName;
+        std::unordered_map<std::string, OtherCharacter> otherCharactersMap;
+    public:
+        OtherCharacters(ClientConnectToServer &TCPdata){
+            minDistance = 10000000;
+            Packet initOtherCharacterPacket = TCPdata.receiveData();
+            if(initOtherCharacterPacket.mode_packet != INITMODE) return;
+            int otherCharacterNumber = (int)initOtherCharacterPacket.x_packet;
+            for(int i = 0; i < otherCharacterNumber ; i++) {
+                Packet packet = TCPdata.receiveData();
+                if (packet.mode_packet == MAPMODE) {
+                    OtherCharacter otherCharacter(characterTexture, font, packet.sender_name, packet.x_packet, packet.y_packet, packet.x_packet, packet.y_packet);
+                    otherCharactersMap[packet.sender_name] = otherCharacter;
+                }
+            }
+        };
+        void drawAllOtherCharacters(){
+            for(auto& otherCharacter : otherCharactersMap) otherCharacter.second.draw();
+        }
+        void updateOtherCharactersByPacket(Character& mainCharacter, Packet& otherCharacterUpdatePacket){
+            if(otherCharactersMap.find(otherCharacterUpdatePacket.sender_name) == otherCharactersMap.end()){
+                OtherCharacter otherCharacter(characterTexture, font, otherCharacterUpdatePacket.sender_name, otherCharacterUpdatePacket.x_packet, otherCharacterUpdatePacket.y_packet, mainCharacter.getPosition().x, mainCharacter.getPosition().y);
+                otherCharactersMap[otherCharacterUpdatePacket.sender_name] = otherCharacter;
+            } else if (otherCharacterUpdatePacket.x_packet == NOWHERE && otherCharacterUpdatePacket.y_packet == NOWHERE) {
+                otherCharactersMap.erase(otherCharacterUpdatePacket.sender_name);
+            } else {
+                otherCharactersMap[otherCharacterUpdatePacket.sender_name].setPosition(otherCharacterUpdatePacket.x_packet, otherCharacterUpdatePacket.y_packet);
+                otherCharactersMap[otherCharacterUpdatePacket.sender_name].refreshDistance(mainCharacter.getPosition().x, mainCharacter.getPosition().y);
+            }
+            if(otherCharactersMap[otherCharacterUpdatePacket.sender_name].getDistance() < minDistance) {
+                minDistance = otherCharactersMap[otherCharacterUpdatePacket.sender_name].getDistance();
+                minDistanceCharacterName = otherCharacterUpdatePacket.sender_name;
+                if(minDistance < CHATDISTANCE) {
+                    std::string message =  "Press X to ask " + minDistanceCharacterName + " to ChatBar!";
+                    systemMessage.setString(message);
+                }else {
+                    systemMessage.setString("");
+                }
+            }
+        }
+        void updateOtherCharactersByMainCharacter(Character& mainCharacter){
+            for(auto& otherCharacter : otherCharactersMap){
+                otherCharacter.second.refreshDistance(mainCharacter.getPosition().x, mainCharacter.getPosition().y);
+                if(otherCharacter.second.getDistance() < minDistance) {
+                    minDistance = otherCharacter.second.getDistance();
+                    minDistanceCharacterName = otherCharacter.first;
+                    if(minDistance < CHATDISTANCE) {
+                        std::string message =  "Press X to ask " + minDistanceCharacterName + " to ChatBar!";
+                        systemMessage.setString(message);
+                    }else {
+                        systemMessage.setString("");
+                    }
+                }
+            }
+        }
+};
 
 class ChatEnvironment{
     private:
@@ -254,223 +471,6 @@ class ChatEnvironment{
         sf::Time getChatTime(){return chatClock.getElapsedTime();}
 };
 
-class Character {
-    private:
-        sf::Sprite characterSprite;
-        sf::Text characterName;
-        sf::Vector2f characterPosition;
-    public:
-        Character(){};
-        Character(std::string name = playerID, float x, float y){
-            characterPosition.x = x;
-            characterPosition.y = y;
-            characterSprite.setTexture(characterTexture);
-            characterSprite.setScale(0.08f, 0.08f);
-            characterSprite.setPosition(characterPosition);
-            characterName.setString(name);
-            characterName.setFont(font);
-            characterName.setCharacterSize(20);
-            characterName.setFillColor(sf::Color::White);
-            characterName.setPosition(characterPosition.x + 20, characterPosition.y - 20);
-        }
-        void move(float x, float y) {
-            characterPosition.x += x;
-            characterPosition.y += y;
-            characterSprite.setPosition(characterPosition);
-            characterName.setPosition(characterPosition.x + 20, characterPosition.y - 20);
-        }
-        sf::Vector2f getPosition() {
-            return characterPosition;
-        }
-        void setPosition(float x, float y) {
-            characterPosition.x = x;
-            characterPosition.y = y;
-            characterSprite.setPosition(characterPosition);
-            characterName.setPosition(characterPosition.x + 20, characterPosition.y - 20);
-        }
-        void draw() {
-            window.draw(characterSprite);
-            window.draw(characterName);
-        }
-        bool mainCharacterMove() {
-            bool Changed = false; 
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-                move(0, -2.7f);
-                Changed = true;
-            }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-                move(-2.7f, 0);
-                Changed = true;
-            }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-                move(0, 2.7f);
-                Changed = true;
-            }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-                move(2.7f, 0);
-                Changed = true;
-            }
-            return Changed;
-        }
-};
-
-class OtherCharacter : public Character {
-    friend class OtherCharacters;
-    private:
-        float distance;
-    public:
-        OtherCharacter(float mx, float my){ refreshDistance(mx, my); };
-        OtherCharacter(sf::Texture& texture, sf::Font& font, std::string name, float x, float y, float mx, float my) : Character(name, x, y){
-            refreshDistance(mx, my);
-        }
-        void refreshDistance(float mx, float my) {
-            distance = sqrt(pow(mx - getPosition().x, 2) + pow(my - getPosition().y, 2));
-            std::cout << "distance: " << distance << std::endl;
-        }
-        float getDistance() {
-            return distance;
-        }
-};
-
-class Rank {
-    private:
-        sf::Color frameBackgroundColor, titleTextColor, bestRankTextColor, yourRankTextColor;
-        sf::RectangleShape bestRankFrame, yourRankFrame;
-        sf::Text bestRankText, yourRankText, bestRankName, bestRankScore, yourRankName, yourRankScore;
-    public:
-        Rank(sf::Font& font, std::string name = playerID){
-            frameBackgroundColor = sf::Color(238, 221, 130, 230);
-            titleTextColor = sf::Color(218, 165, 32);
-            bestRankTextColor = sf::Color(205, 92, 92);
-            yourRankTextColor = sf::Color(128, 128, 128);
-
-            bestRankFrame = sf::RectangleShape(sf::Vector2f(180, 60));
-            bestRankFrame.setFillColor(frameBackgroundColor);
-
-            yourRankFrame = sf::RectangleShape(sf::Vector2f(180, 60));
-            yourRankFrame.setFillColor(frameBackgroundColor);
-
-            bestRankText.setFont(font);
-            bestRankText.setCharacterSize(20);
-            bestRankText.setFillColor(titleTextColor);
-            bestRankText.setString("BEST");
-
-            bestRankName.setFont(font);
-            bestRankName.setCharacterSize(25);
-            bestRankName.setFillColor(bestRankTextColor);
-            bestRankName.setString("-"); 
-
-            bestRankScore.setFont(font);
-            bestRankScore.setCharacterSize(20);
-            bestRankScore.setFillColor(bestRankTextColor);
-            bestRankScore.setString("0.0");
-
-            yourRankText.setFont(font);
-            yourRankText.setCharacterSize(20);
-            yourRankText.setFillColor(titleTextColor);
-            yourRankText.setString("YOUR'S");
-
-            yourRankName.setFont(font);
-            yourRankName.setCharacterSize(25);
-            yourRankName.setFillColor(yourRankTextColor);
-            yourRankName.setString(name);
-
-            yourRankScore.setFont(font);
-            yourRankScore.setCharacterSize(20);
-            yourRankScore.setFillColor(yourRankTextColor);
-            yourRankScore.setString("0.0"); 
-        };
-        void setPosition(){
-            sf::Vector2f viewSize = view.getSize();
-            sf::Vector2f viewCenter = view.getCenter();
-            bestRankFrame.setPosition(viewCenter.x + viewSize.x / 2 - 190, viewCenter.y - viewSize.y / 2 + 5);
-            bestRankName.setPosition(viewCenter.x + viewSize.x / 2 - 170, viewCenter.y - viewSize.y / 2 + 30);
-            bestRankScore.setPosition(viewCenter.x + viewSize.x / 2 - 60, viewCenter.y - viewSize.y / 2 + 35);
-            yourRankFrame.setPosition(viewCenter.x + viewSize.x / 2 - 190, viewCenter.y - viewSize.y / 2 + 70);
-            yourRankName.setPosition(viewCenter.x + viewSize.x / 2 - 170, viewCenter.y - viewSize.y / 2 + 95);
-            yourRankScore.setPosition(viewCenter.x + viewSize.x / 2 - 60, viewCenter.y - viewSize.y / 2 + 100);
-        }
-        void draw(){
-            window.draw(bestRankFrame);
-            window.draw(yourRankFrame);
-            window.draw(bestRankText);
-            window.draw(yourRankText);
-            window.draw(bestRankName);
-            window.draw(bestRankScore);
-            window.draw(yourRankName);
-            window.draw(yourRankScore);
-        };
-        void updateTime(char* time){
-            std::string timeStr(time);
-            yourRankScore.setString(time);
-        };
-        void updateRank(char* bestName, char* time){
-            std::string bestNameStr(bestName);
-            std::string timeStr(time);
-            bestRankName.setString(bestNameStr);
-            bestRankScore.setString(timeStr);
-        };
-};
-
-class OtherCharacters{
-    private:
-        float minDistance;
-        std::string minDistanceCharacterName;
-        std::unordered_map<std::string, OtherCharacter> otherCharactersMap;
-    public:
-        OtherCharacters(ClientConnectToServer &TCPdata){
-            minDistance = 10000000;
-            Packet initOtherCharacterPacket = TCPdata.receiveData();
-            if(initOtherCharacterPacket.mode_packet != INITMODE) return;
-            int otherCharacterNumber = (int)initOtherCharacterPacket.x_packet;
-            for(int i = 0; i < otherCharacterNumber ; i++) {
-                Packet packet = TCPdata.receiveData();
-                if (packet.mode_packet == MAPMODE) {
-                    OtherCharacter otherCharacter(characterTexture, font, packet.sender_name, packet.x_packet, packet.y_packet, packet.x_packet, packet.y_packet);
-                    otherCharactersMap[packet.sender_name] = otherCharacter;
-                }
-            }
-        };
-        void drawAllOtherCharacters(){
-            for(auto& otherCharacter : otherCharactersMap) otherCharacter.second.draw();
-        }
-        void updateOtherCharactersByPacket(Character& mainCharacter, Packet& otherCharacterUpdatePacket){
-            if(otherCharactersMap.find(otherCharacterUpdatePacket.sender_name) == otherCharactersMap.end()){
-                OtherCharacter otherCharacter(characterTexture, font, otherCharacterUpdatePacket.sender_name, otherCharacterUpdatePacket.x_packet, otherCharacterUpdatePacket.y_packet, mainCharacter.getPosition().x, mainCharacter.getPosition().y);
-                otherCharactersMap[otherCharacterUpdatePacket.sender_name] = otherCharacter;
-            } else if (otherCharacterUpdatePacket.x_packet == NOWHERE && otherCharacterUpdatePacket.y_packet == NOWHERE) {
-                otherCharactersMap.erase(otherCharacterUpdatePacket.sender_name);
-            } else {
-                otherCharactersMap[otherCharacterUpdatePacket.sender_name].setPosition(otherCharacterUpdatePacket.x_packet, otherCharacterUpdatePacket.y_packet);
-                otherCharactersMap[otherCharacterUpdatePacket.sender_name].refreshDistance(mainCharacter.getPosition().x, mainCharacter.getPosition().y);
-            }
-            if(otherCharactersMap[otherCharacterUpdatePacket.sender_name].getDistance() < minDistance) {
-                minDistance = otherCharactersMap[otherCharacterUpdatePacket.sender_name].getDistance();
-                minDistanceCharacterName = otherCharacterUpdatePacket.sender_name;
-                if(minDistance < CHATDISTANCE) {
-                    std::string message =  "Press X to ask " + minDistanceCharacterName + " to ChatBar!";
-                    systemMessage.setString(message);
-                }else {
-                    systemMessage.setString("");
-                }
-            }
-        }
-        void updateOtherCharactersByMainCharacter(Character& mainCharacter){
-            for(auto& otherCharacter : otherCharactersMap){
-                otherCharacter.second.refreshDistance(mainCharacter.getPosition().x, mainCharacter.getPosition().y);
-                if(otherCharacter.second.getDistance() < minDistance) {
-                    minDistance = otherCharacter.second.getDistance();
-                    minDistanceCharacterName = otherCharacter.first;
-                    if(minDistance < CHATDISTANCE) {
-                        std::string message =  "Press X to ask " + minDistanceCharacterName + " to ChatBar!";
-                        systemMessage.setString(message);
-                    }else {
-                        systemMessage.setString("");
-                    }
-                }
-            }
-        }
-};
 
 void initClientBasicElements(){
     brown           = sf::Color(139, 69, 19);
