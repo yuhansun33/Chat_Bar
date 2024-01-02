@@ -1,16 +1,33 @@
 #include "header.h"
 #include "clientTCP.h"
 
-sf::View view;
-sf::RenderWindow window;
-sf::Texture mapTexture;
-sf::Texture characterTexture;
-sf::Font font;
-sf::Font chatFont;
-sf::Music bgm;
-sf::Sprite mapSprite;
-sf::Color lavenderBlush;
-sf::Color brown;
+std::string             playerID;
+sf::View                view;
+sf::Color               lavenderBlush;
+sf::Color               brown;
+sf::Texture             mapTexture;
+sf::Texture             characterTexture;
+sf::Font                font;
+sf::Font                chatFont;
+sf::Music               bgm;
+sf::Sprite              mapSprite;
+sf::Text                systemMessage;
+sf::RenderWindow        window;
+
+/*documentation:
+
+classes:
+    ClientConnectToServer:
+        處理有關TCP連線的class，包含連線、傳送封包、接收封包、設定非堵塞等功能
+    ChatEnvironment:
+        處理有關聊天室的class，包含聊天室的狀態、聊天室的背景圖、聊天室的文字、聊天室的輸入框、聊天室的計時器等功能
+
+    Character: 主角的class
+    OtherCharacter: 其他玩家的class
+    OtherCharacters: 其他玩家的集合
+    Rank: 計分框的class
+*/
+
 
 class ChatEnvironment{
     private:
@@ -50,7 +67,189 @@ class ChatEnvironment{
             chatRecord.setFont(chatFont);
             chatRecord.setCharacterSize(30);
             chatRecord.setFillColor(sf::Color::White);
+            chatHistory.clear();
+            userInput.clear();
+            chatState = CHATSTATENONE;
+            changeView = false;
         }
+
+        void chatReplyReceivedHandler(Packet& packet){
+            if(strcmp(packet.message, "Connect?") == 0){
+                chatState = CHATSTATERECV;
+                requestSenderName = packet.sender_name;
+            }
+            if(strcmp(packet.message, "Can not chat") == 0){
+                chatState = CHATSTATENONE;
+            }
+            if(strcmp(packet.message, "Can chat") == 0){
+                chatState = CHATSTATECHAT;
+                chatStart();
+            }
+        }
+
+        void chatRequestSendHandler(ClientConnectToServer& TCPdata){
+            if(chatState != CHATSTATENONE) return;
+            Packet chatRequestPacket(REQMODE, "", requestReceiverName.c_str(), 0, 0, "Connect?");
+            TCPdata.sendData(chatRequestPacket);
+            chatState = CHATSTATESEND;
+        }
+
+        void chatStart(){
+            changeView = false;
+            chatClock.restart();
+            chatHistory.clear();
+            userInput.clear();
+        }
+
+        void chatKeyHandler(sf::Event& event,  ClientConnectToServer& TCPdata, bool isWindowFocused) {
+            if(!isWindowFocused) return;
+            if(chatState == CHATSTATENONE){
+                Packet chatRequestPacket(REQMODE, playerID, requestReceiverName.c_str(), 0, 0, "first request");
+                TCPdata.sendData(chatRequestPacket);
+                chatState = CHATSTATESEND;
+            }
+            else if(chatState == CHATSTATECHAT){
+                if(event.type == sf::Event::TextEntered){
+                    if(event.text.unicode == '\b' && !userInput.empty()){
+                        userInput.pop_back();
+                    }else if(event.text.unicode >= 32 && event.text.unicode <= 126){
+                        userInput += static_cast<char>(event.text.unicode);
+                    }
+                }
+                if(event.key.code == sf::Keyboard::Enter){
+                    if(userInput.empty()) return;
+                    Packet chatPacket(CHATMODE, "", requestReceiverName.c_str(), 0, 0, userInput.c_str());
+                    TCPdata.sendData(chatPacket);
+                    chatHistory += playerID + "  :  " + userInput + "\n";
+                    std::cout << "chatHistory: \n" << chatHistory << std::endl;
+                    userInput.clear();
+                    chatroomSprite.move(0, MOVEDISTANCE); 
+                    view.move(0, MOVEDISTANCE); 
+                    window.setView(view);
+                    chatInputBox.move(0, MOVEDISTANCE);
+                    changeView = true;
+                }
+                if(event.key.code == sf::Keyboard::Escape){
+                    std::string message =  playerID + " left the chatroom.\nPress Esc back to map.";
+                    Packet chatPacket(ESCMODE, playerID, requestReceiverName.c_str(), 0, 0, message.c_str());
+                    TCPdata.sendData(chatPacket);
+                    std::cout << "發送離開聊天室訊息" << std::endl;
+                    chatHistory += message + "\n";  
+                    changeView = true;
+                    chatState = CHATSTATENONE;
+                    sf::Time duration = chatClock.getElapsedTime();
+                    float minutes = duration.asSeconds() / 60.0f;
+                    char minutesStr[20];
+                    sprintf(minutesStr, "%.1f", minutes);
+                    std::cout << "minutes: " << minutesStr << " min" << std::endl;
+                    Packet timePacket(TIMEMODE, playerID, "", 0, 0, minutesStr);
+                    TCPdata.sendData(timePacket);
+                }
+            }
+        }
+
+        void chatRequestReceiveHandler(ClientConnectToServer &TCPdata, Character& mainCharacter){
+            std::string message =  
+            requestSenderName + ":\nrequests to chat!\n"
+                              +   "        (y/n)       ";
+            requestText.setString(message);
+            if(chatState != CHATSTATERECV) {
+                requestSprite.setPosition(mainCharacter.getPosition().x - 150, mainCharacter.getPosition().y - 150);
+                window.draw(requestSprite);
+                requestText.setPosition(requestSprite.getPosition().x + 65, requestSprite.getPosition().y + 100);
+                window.draw(requestText);
+                return;
+            };
+            if(sf::Keyboard::isKeyPressed(sf::Keyboard::Y)){
+                Packet chatRequestPacket(REQMODE, "", requestSenderName.c_str(), 0, 0, "Yes");
+                TCPdata.sendData(chatRequestPacket);
+                chatState = CHATSTATECHAT;
+                chatStart();
+            } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::N)) {
+                Packet chatRequestPacket(REQMODE, "", requestSenderName.c_str(), 0, 0, "No");
+                TCPdata.sendData(chatRequestPacket);
+                chatState = CHATSTATENONE;
+            }
+            sf::Vector2f viewSize = view.getSize();
+            sf::Vector2f viewCenter = view.getCenter();
+            float systemMessageX = viewCenter.x - viewSize.x / 2 + 10;
+            float systemMessageY = viewCenter.y + viewSize.y / 2 - systemMessage.getCharacterSize();
+            systemMessage.setPosition(systemMessageX, systemMessageY);
+            window.draw(systemMessage);
+        }
+
+        void chatHandler(ClientConnectToServer &TCPdata){
+            if(chatState != CHATSTATECHAT) return;
+            while(1){
+                Packet chatPacket = TCPdata.receiveDataNonBlock();
+                if(chatPacket.mode_packet == EMPTYMODE) break;
+                if(chatPacket.mode_packet == CHATMODE){
+                    std::string senderName(chatPacket.sender_name);
+                    std::string messageText(chatPacket.message);
+                    chatHistory +=  senderName + "  :  " + messageText + "\n";
+                    std::cout << "chatHistory: \n" << chatHistory << std::endl;
+                    //移動視角
+                    chatroomSprite.move(0, MOVEDISTANCE); // 向上移动背景图
+                    view.move(0, MOVEDISTANCE); // 向上移动视图
+                    window.setView(view);
+                    chatInputBox.move(0, MOVEDISTANCE);
+                    changeView = true;
+                }
+                if(chatPacket.mode_packet == ESCMODE){
+                    std::cout << "收到離開聊天室訊息" << std::endl;
+                    std::string messageText(chatPacket.message);
+                    chatHistory += messageText + "\n";
+                    std::cout << "chatHistory: \n" << chatHistory << std::endl;
+                    //移動視角
+                    chatroomSprite.move(0, 2 * MOVEDISTANCE); // 向上移动背景图
+                    view.move(0, 2 * MOVEDISTANCE); // 向上移动视图
+                    window.setView(view);
+                    chatInputBox.move(0, 2 * MOVEDISTANCE);
+                    changeView = true;
+                }
+            }
+        }
+
+        void chatDraw(Character& mainCharacter) {
+            sf::Vector2f viewCenter = view.getCenter();
+            sf::Vector2f viewSize = view.getSize();
+            if(chatState == CHATSTATENONE or chatState == CHATSTATESEND){
+                float systemMessageX = viewCenter.x - viewSize.x / 2 + 10;
+                float systemMessageY = viewCenter.y + viewSize.y / 2 - systemMessage.getCharacterSize();
+                systemMessage.setPosition(systemMessageX, systemMessageY);
+                window.draw(systemMessage);
+            }
+            if(chatState == CHATSTATERECV){
+                requestSprite.setPosition(mainCharacter.getPosition().x - 150, mainCharacter.getPosition().y - 150);
+                window.draw(requestSprite);
+                requestText.setPosition(requestSprite.getPosition().x + 65, requestSprite.getPosition().y + 100);
+                window.draw(requestText);
+            }
+            if(chatState == CHATSTATECHAT){
+                sf::FloatRect spriteBounds = chatroomSprite.getGlobalBounds();
+                sf::Vector2f spriteCenter(spriteBounds.left + spriteBounds.width / 2.0f,
+                                        spriteBounds.top + spriteBounds.height / 2.0f);
+                if(changeView == false){
+                    view.setCenter(spriteCenter);
+                    window.setView(view);
+                    chatInputBox.setPosition(chatroomSprite.getPosition().x + spriteBounds.width / 3.3f,
+                                chatroomSprite.getPosition().y + spriteBounds.height / 1.115f);
+                    chatRecord.setPosition(chatroomSprite.getPosition().x + spriteBounds.width / 8.5f,
+                                chatroomSprite.getPosition().y + spriteBounds.height / 1.14f);
+                }
+                
+                chatRecord.setString(chatHistory);
+                window.draw(chatRecord);
+                window.draw(chatroomSprite);
+                window.draw(chatInputBox);
+
+                sf::Text enterInput(userInput, chatFont, 30);
+                enterInput.setPosition(chatInputBox.getPosition().x + 5, chatInputBox.getPosition().y);
+                enterInput.setFillColor(sf::Color::Black);
+                window.draw(enterInput);
+            }
+        }
+
         void startTimer(){chatClock.restart();}
         sf::Time getChatTime(){return chatClock.getElapsedTime();}
 };
@@ -62,7 +261,7 @@ class Character {
         sf::Vector2f characterPosition;
     public:
         Character(){};
-        Character(std::string name, float x, float y){
+        Character(std::string name = playerID, float x, float y){
             characterPosition.x = x;
             characterPosition.y = y;
             characterSprite.setTexture(characterTexture);
@@ -120,8 +319,8 @@ class OtherCharacter : public Character {
     private:
         float distance;
     public:
-        OtherCharacter(){};
-        OtherCharacter(sf::Texture& texture, sf::Font& font, std::string name, float x, float y, float mx, float my) : Character(texture, font, name, x, y){
+        OtherCharacter(float mx, float my){ refreshDistance(mx, my); };
+        OtherCharacter(sf::Texture& texture, sf::Font& font, std::string name, float x, float y, float mx, float my) : Character(name, x, y){
             refreshDistance(mx, my);
         }
         void refreshDistance(float mx, float my) {
@@ -139,7 +338,7 @@ class Rank {
         sf::RectangleShape bestRankFrame, yourRankFrame;
         sf::Text bestRankText, yourRankText, bestRankName, bestRankScore, yourRankName, yourRankScore;
     public:
-        Rank(sf::Font& font, std::string name){
+        Rank(sf::Font& font, std::string name = playerID){
             frameBackgroundColor = sf::Color(238, 221, 130, 230);
             titleTextColor = sf::Color(218, 165, 32);
             bestRankTextColor = sf::Color(205, 92, 92);
@@ -205,11 +404,11 @@ class Rank {
             std::string timeStr(time);
             yourRankScore.setString(time);
         };
-        void updateRank(char* name, char* time){
-            std::string nameStr(name);
+        void updateRank(char* bestName, char* time){
+            std::string bestNameStr(bestName);
             std::string timeStr(time);
-            bestRankName.setString(name);
-            bestRankScore.setString(time);
+            bestRankName.setString(bestNameStr);
+            bestRankScore.setString(timeStr);
         };
 };
 
@@ -218,12 +417,8 @@ class OtherCharacters{
         float minDistance;
         std::string minDistanceCharacterName;
         std::unordered_map<std::string, OtherCharacter> otherCharactersMap;
-        sf::Text informOtherCharacterNearBy;
     public:
         OtherCharacters(ClientConnectToServer &TCPdata){
-            informOtherCharacterNearBy.setFont(font);
-            informOtherCharacterNearBy.setCharacterSize(50);
-            informOtherCharacterNearBy.setFillColor(lavenderBlush);
             minDistance = 10000000;
             Packet initOtherCharacterPacket = TCPdata.receiveData();
             if(initOtherCharacterPacket.mode_packet != INITMODE) return;
@@ -254,9 +449,9 @@ class OtherCharacters{
                 minDistanceCharacterName = otherCharacterUpdatePacket.sender_name;
                 if(minDistance < CHATDISTANCE) {
                     std::string message =  "Press X to ask " + minDistanceCharacterName + " to ChatBar!";
-                    informOtherCharacterNearBy.setString(message);
+                    systemMessage.setString(message);
                 }else {
-                    informOtherCharacterNearBy.setString("");
+                    systemMessage.setString("");
                 }
             }
         }
@@ -268,385 +463,124 @@ class OtherCharacters{
                     minDistanceCharacterName = otherCharacter.first;
                     if(minDistance < CHATDISTANCE) {
                         std::string message =  "Press X to ask " + minDistanceCharacterName + " to ChatBar!";
-                        informOtherCharacterNearBy.setString(message);
+                        systemMessage.setString(message);
                     }else {
-                        informOtherCharacterNearBy.setString("");
+                        systemMessage.setString("");
                     }
                 }
             }
         }
 };
 
-void clientPacketHandler(Packet& clientReceivedPacket, ClientConnectToServer& TCPdata, OtherCharacters& OCs, Character& mainCharacter, Rank& rank){
-    switch (clientReceivedPacket.mode_packet) {
-        case EMPTYMODE:
-            break;
-        case MAPMODE:
-            OCs.updateOtherCharactersByPacket(mainCharacter, clientReceivedPacket);
-            break;
-        // case CHATMODE:    
-            // break;
-        case REQMODE:
-
-            break;
-        case TIMEMODE:
-            rank.updateTime(clientReceivedPacket.message);
-            break;
-        case RANKMODE:
-            rank.updateRank(clientReceivedPacket.sender_name, clientReceivedPacket.message);
-            break;
-        default:
-            break;
-    } 
-}
-
-int main(int argc, char** argv) {
-
+void initClientBasicElements(){
     brown           = sf::Color(139, 69, 19);
     lavenderBlush   = sf::Color(255, 240, 245);
-
     if (!bgm.openFromFile("Assets/Musics/bgm.ogg")) {
         perror("音樂加載失敗");
-        return -1;
     }
     if (!mapTexture.loadFromFile("Assets/Pictures/map.png")) {
         perror("地圖加載失敗");
-        return -1;
+        exit(-1);
     }
-    if(!characterTexture.loadFromFile("Assets/Pictures/boy.png")){
+    if (!characterTexture.loadFromFile("Assets/Pictures/boy.png")){
         perror("主角圖片加載失敗");
-        return -1;
+        exit(-1);
     }
     if (!font.loadFromFile("Assets/Fonts/login_font.ttf")) {
         perror("字體加載失敗");
-        return -1;
+        exit(-1);
     }
     if (!chatFont.loadFromFile("Assets/Fonts/chat_font.ttf")) {
         perror("字體加載失敗");
-        return -1;
+        exit(-1);
     }
     mapSprite.setTexture(mapTexture);
     mapSprite.setScale(2.5f, 2.5f);
 
-    ClientConnectToServer TCPdata;
-    TCPdata.serverIPPort(SERVERIP, GAMEPORT);
-    std::string name(argv[1]);
-    sf::Vector2f initPosition(918, 847);
-    Packet mainCharacterPacket(MAPMODE, name, "", initPosition.x, initPosition.y, "");
+    systemMessage.setFont(font);
+    systemMessage.setCharacterSize(50);
+    systemMessage.setFillColor(lavenderBlush);
+
     window.create(sf::VideoMode(500, 500), "ChatBar");
     window.setFramerateLimit(60);
+    
     bgm.setLoop(true);
     bgm.play();
 
-    // 接受其他玩家的資訊
-    // std::unordered_map<std::string, OtherCharacter> otherCharacters;
-    // Packet otherCharacterPacketSize = TCPdata.receiveData();
-    // if (otherCharacterPacketSize.mode_packet == INITMODE) {
-    //     int otherCharacterNumber = (int)otherCharacterPacketSize.x_packet;
-    //     for(int i = 0; i < otherCharacterNumber ; i++) {
-    //         Packet packet = TCPdata.receiveData();
-    //         if (packet.mode_packet == MAPMODE) {
-    //             OtherCharacter otherCharacter(characterTexture, font, packet.sender_name, packet.x_packet, packet.y_packet, packet.x_packet, packet.y_packet);
-    //             otherCharacters[packet.sender_name] = otherCharacter;
-    //         }
-    //     }
-    // }
-
-    // 給伺服器發送自己的資訊
-    TCPdata.sendData(mainCharacterPacket);
-
-    // 設置聊天環境
-    ChatEnvironment chatEnv;
-
-    // 設置主角
-    Character mainCharacter(name, mainCharacterPacket.x_packet, mainCharacterPacket.y_packet);
-
     view.reset(sf::FloatRect(0.f, 0.f, 800.f, 600.f));
+}
+
+float viewResize(sf::Event &event){
+    float newWidth = static_cast<float>(event.size.width);
+    float newHeight = static_cast<float>(event.size.height);
+    float aspectRatio = newWidth / newHeight;
+    sf::FloatRect visibleArea(0, 0, 800.f * aspectRatio, 600.f);
+    view = sf::View(visibleArea);
+    return aspectRatio;
+}
+
+int main(int argc, char** argv) {
+    initClientBasicElements();
+    playerID = argv[1];
+    ClientConnectToServer TCPdata;
+    TCPdata.serverIPPort(SERVERIP, GAMEPORT);
+    sf::Vector2f initPosition(918, 847);
+    Character mainCharacter(playerID, initPosition.x, initPosition.y);
+    Packet mainCharacterPacket(MAPMODE, playerID, "", initPosition.x, initPosition.y, "");
+    TCPdata.sendData(mainCharacterPacket);
     view.setCenter(mainCharacter.getPosition());
-    
-    // Nonblock模式
+    OtherCharacters otherCharacters(TCPdata);
+    ChatEnvironment chatEnvironment;
     TCPdata.turnOnNonBlock();
+    Rank rank(font, playerID);
 
-    Rank rank(font, name);
-
-    // 遊戲主循環
-    bool isWindowFocused = true;
-    float aspectRatio = 0;
+    float aspectRatio       = 0;
+    bool isWindowFocused    = true;
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed) window.close();
-            if (event.type == sf::Event::GainedFocus) isWindowFocused = true;
-            if (event.type == sf::Event::LostFocus) isWindowFocused = false; 
-            if (event.type == sf::Event::Resized) {
-                float newWidth = static_cast<float>(event.size.width);
-                float newHeight = static_cast<float>(event.size.height);
-                aspectRatio = newWidth / newHeight;
-                sf::FloatRect visibleArea(0, 0, 800.f * aspectRatio, 600.f);
-                view = sf::View(visibleArea);
-            }
-            if(event.type == sf::Event::KeyPressed){
-                if(event.key.code == sf::Keyboard::Enter){
-                    if(userInput.empty()) continue;
-                    std::cout << "userInput: " << userInput << std::endl;
-                    Packet chatPacket(CHATMODE, name, chatEnv.requestReceiver.c_str(), 0, 0, userInput.c_str());
-                    TCPdata.sendData(chatPacket);
-                    chatHistory += name + "  :  " + userInput + "\n";
-                    std::cout << "chatHistory: \n" << chatHistory << std::endl;
-                    userInput.clear();
-                    //移動視角
-                    chatEnv.chatroomSprite.move(0, MOVEDISTANCE); // 向上移动背景图
-                    view.move(0, MOVEDISTANCE); // 向上移动视图
-                    window.setView(view);
-                    inputBox.move(0, MOVEDISTANCE);
-                    chatEnv.changeView = true;
-                }
-                if (chatEnv.isChatting && event.key.code == sf::Keyboard::Escape) {
-                    std::string message =  name + " left the chatroom.\nPress Esc back to map.";
-                    Packet chatPacket(ESCMODE, name, chatEnv.requestReceiver.c_str(), 0, 0, message.c_str());
-                    TCPdata.sendData(chatPacket);
-                    std::cout << "發送離開聊天室訊息" << std::endl;
-                    chatHistory += message + "\n";  
-                    chatEnv.changeView = true;
-                    // 回到地圖模式
-                    chatEnv.isChatting = false;
-                    //結束計時
-                    sf::Time duration = chatEnv.getChatTime();
-                    float minutes = duration.asSeconds() / 60.0f;
-                    char minutesStr[20];
-                    sprintf(minutesStr, "%.1f", minutes);
-                    std::cout << "minutes: " << minutesStr << " min" << std::endl;
-                    Packet timePacket(TIMEMODE, name, "", 0, 0, minutesStr);
-                    TCPdata.sendData(timePacket);
-                }
-            }
-            if(event.type == sf::Event::TextEntered){
-                if(event.text.unicode == '\b' && !userInput.empty()){
-                    userInput.pop_back();
-                }else if(event.text.unicode >= 32 && event.text.unicode <= 126){
-                    userInput += static_cast<char>(event.text.unicode);
-                }
-            }
+            if (event.type == sf::Event::Closed)        window.close();
+            if (event.type == sf::Event::GainedFocus)   isWindowFocused = true;
+            if (event.type == sf::Event::LostFocus)     isWindowFocused = false; 
+            if (event.type == sf::Event::Resized)       aspectRatio = viewResize(event);
+            if (event.type == sf::Event::KeyPressed)    chatEnvironment.chatKeyHandler(event, TCPdata, isWindowFocused);
         }
-
-
-
-        // 地圖模式
-        if(chatEnv.isChatting == false){
-            // std::string mainCharacterName;
-            // float minDistance = 100000000;
-            if (mainCharacter.mainCharacterMove()) {
-                Packet packet(MAPMODE, name, "", mainCharacter.getPosition().x, mainCharacter.getPosition().y, "");
-                TCPdata.sendData(packet);
-                // for(auto& otherCharacter : otherCharacters){
-                //     otherCharacter.second.refreshDistance(mainCharacter.getPosition().x, mainCharacter.getPosition().y);
-                //     if(minDistance > otherCharacter.second.getDistance()) {
-                //         minDistance = otherCharacter.second.getDistance();
-                //         mainCharacterName = otherCharacter.first;
-                //         chatEnv.requestReceiver = mainCharacterName;
-                //         if(minDistance < CHATDISTANCE) {
-                //             std::string message =  "Press X to ask " + mainCharacterName + " to ChatBar!";
-                //             systemMessage.setString(message);
-                //         }else {
-                //             systemMessage.setString("");
-                //         }
-                //     }
-                // }    
-            }
-            // 接收其他玩家的位置
-            while(true){
-                // Packet updatePacket = TCPdata.receiveDataNonBlock();
-                // if (updatePacket.mode_packet == EMPTYMODE) {
-                //     std::cout << "break" << std::endl;
-                //     break;
-                // }
-                // if (updatePacket.mode_packet == MAPMODE) {
-                //     std::cout << "packet.sender_name: " << updatePacket.sender_name << std::endl;
-                //     std::cout << "packet.x_packet: " << updatePacket.x_packet << std::endl;
-                //     std::cout << "packet.y_packet: " << updatePacket.y_packet << std::endl;
-                //     if (otherCharacters.find(updatePacket.sender_name) == otherCharacters.end()) {
-                //         OtherCharacter otherCharacter(characterTexture, font, updatePacket.sender_name, updatePacket.x_packet, updatePacket.y_packet, mainCharacter.getPosition().x, mainCharacter.getPosition().y);
-                //         otherCharacters[updatePacket.sender_name] = otherCharacter;
-                //     } else if (updatePacket.x_packet == -500 && updatePacket.y_packet == -500) {
-                //         otherCharacters.erase(updatePacket.sender_name);
-                //     } else {
-                //         otherCharacters[updatePacket.sender_name].setPosition(updatePacket.x_packet, updatePacket.y_packet);
-                //         otherCharacters[updatePacket.sender_name].refreshDistance(mainCharacter.getPosition().x, mainCharacter.getPosition().y);
-                //     }
-                //     if(otherCharacters[updatePacket.sender_name].getDistance() < minDistance) {
-                //         minDistance = otherCharacters[updatePacket.sender_name].getDistance();
-                //         mainCharacterName = updatePacket.sender_name;
-                //         chatEnv.requestReceiver = mainCharacterName;
-                //         if(minDistance < CHATDISTANCE) {
-                //             std::string message =  "Press X to ask " + mainCharacterName + " to ChatBar!";
-                //             systemMessage.setString(message);
-                //         }else {
-                //             systemMessage.setString("");
-                //         }
-                //     }
-                // }
-                if (updatePacket.mode_packet == REQMODE) {
-                    if(strcmp(updatePacket.message, "Connect?") == 0){
-                        std::cout << "收到聊天請求" << std::endl;
-                        chatEnv.isRequestRecv = true;
-                        chatEnv.requestSender = updatePacket.sender_name;
-                        std::cout << "chatEnv.ReqFrom: " << chatEnv.requestSender << std::endl;
-                    }else if(strcmp(updatePacket.message, "Can chat") == 0){
-                        std::cout << "收到聊天同意" << std::endl;
-                        chatEnv.isRequestSend = false;
-                        chatEnv.isChatting = true;
-                        //開始計時
-                        chatEnv.startTimer();
-                        //重設聊天室
-                        chatEnv.changeView = false;
-                        chatHistory.clear();
-                        userInput.clear();
-                    }else if(strcmp(updatePacket.message, "Can not chat") == 0){
-                        std::cout << "收到聊天拒絕" << std::endl;
-                        chatEnv.isRequestSend = false;
-                    }
-                }
-                // if(updatePacket.mode_packet == TIMEMODE){
-                //     std::cout << "收到時間訊息" << std::endl;
-                //     std::string messageText(updatePacket.message);
-                //     yourRankScore.setString(messageText);
-                // }
-                // if(updatePacket.mode_packet == RANKMODE){
-                //     std::cout << "收到最高時間訊息" << std::endl;
-                //     std::string user(updatePacket.sender_name);
-                //     std::string messageText(updatePacket.message);
-                //     bestRankName.setString(user);
-                //     bestRankScore.setString(messageText);
-                // }
-            }
-            //處裡按下要求聊天
-            if (isWindowFocused && !chatEnv.isRequestSend && sf::Keyboard::isKeyPressed(sf::Keyboard::X)) {
-                // std::cout << "(2)minDistance: " << minDistance << std::endl;
-                // if (minDistance < CHATDISTANCE) {
-                    std::cout << "======================按下X, 送出first request" << std::endl;
-                    std::cout << "name: " << name << std::endl;
-                    std::cout << "recver: " << chatEnv.requestReceiver << std::endl;
-                    Packet chatRequestPacket(REQMODE, name, chatEnv.requestReceiver.c_str(), 0, 0, "first request");
-                    TCPdata.sendData(chatRequestPacket);
-                    chatEnv.isRequestSend = true;
-                // }
-            }
-            //處裡被要求聊天
-            if(chatEnv.isRequestRecv) {
-                std::string message =  chatEnv.requestSender + ":\nrequests to chat!\n"
-                                                        +   "        (y/n)";
-                requestText.setString(message);
-                if (sf::Keyboard::isKeyPressed(sf::Keyboard::Y)) {
-                    //接受請求
-                    Packet chatRequestPacket(REQMODE, name, chatEnv.requestSender.c_str(), 0, 0, "Yes");
-                    TCPdata.sendData(chatRequestPacket);
-                    chatEnv.isRequestRecv = false;
-                    chatEnv.isChatting = true;
-                    //開始計時
-                    chatEnv.startTimer();
-                    //重設聊天室
-                    chatEnv.changeView = false;
-                    chatHistory.clear();
-                    userInput.clear();
-                    std::cout << "按下Y" << std::endl;
-                    // 進入聊天模式
-                } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::N)) {
-                    //拒絕請求
-                    Packet chatRequestPacket(REQMODE, name, chatEnv.requestSender.c_str(), 0, 0, "No");
-                    TCPdata.sendData(chatRequestPacket);
-                    chatEnv.isRequestRecv = false;
-                    std::cout << "按下N" << std::endl;                        
-                }
-            }   
-
+        if (mainCharacter.mainCharacterMove()) {
+            Packet packet(MAPMODE, playerID, "", mainCharacter.getPosition().x, mainCharacter.getPosition().y, "");
+            TCPdata.sendData(packet);
+            otherCharacters.updateOtherCharactersByMainCharacter(mainCharacter);
+        }
+        while(true){
+            Packet clientReceivedPacket = TCPdata.receiveDataNonBlock();
+            switch (clientReceivedPacket.mode_packet) {
+                case EMPTYMODE:
+                    break;
+                case MAPMODE:
+                    otherCharacters.updateOtherCharactersByPacket(mainCharacter, clientReceivedPacket);
+                    break;
+                case REQMODE:
+                    chatEnvironment.chatReplyReceivedHandler(clientReceivedPacket);
+                    break;
+                case TIMEMODE:
+                    rank.updateTime(clientReceivedPacket.message);
+                    break;
+                case RANKMODE:
+                    rank.updateRank(clientReceivedPacket.sender_name, clientReceivedPacket.message);
+                    break;
+                default:
+                    break;
+            }                 
             view.setCenter(mainCharacter.getPosition());
-            sf::Vector2f viewCenter = view.getCenter();
-            sf::Vector2f viewSize = view.getSize();
             window.setView(view);
             window.clear();
             window.draw(mapSprite);
-            mainCharacter.Draw(window);
-            // 計分框
-            // 繪製其他玩家
-            // 渲染
-            for(auto& otherCharacter : otherCharacters) otherCharacter.second.Draw(window);
-            rank.setPosition(view);
-            rank.Draw();
-
-            if(!chatEnv.isRequestRecv){
-                float systemMessageX = viewCenter.x - viewSize.x / 2 + 10;  
-                float systemMessageY = viewCenter.y + viewSize.y / 2 - systemMessage.getCharacterSize();  
-                systemMessage.setPosition(systemMessageX, systemMessageY);
-                window.draw(systemMessage);
-            }else if(chatEnv.isRequestRecv){
-                chatEnv.requestSprite.setPosition(mainCharacter.getPosition().x - 150, mainCharacter.getPosition().y - 150);
-                window.draw(chatEnv.requestSprite);
-                requestText.setPosition(chatEnv.requestSprite.getPosition().x + 65, chatEnv.requestSprite.getPosition().y + 100);
-                window.draw(requestText);
-            }
-        //地圖模式結束
-        }else if(chatEnv.isChatting == true){
-            // 聊天模式
-            while(true){
-                Packet packet = TCPdata.receiveDataNonBlock();
-                if (packet.mode_packet == EMPTYMODE) {
-                    std::cout << "no msg" << std::endl;
-                    break;
-                }
-                if(packet.mode_packet == CHATMODE){
-                    std::string senderName(packet.sender_name);
-                    std::string messageText(packet.message);
-                    chatHistory +=  senderName + "  :  " + messageText + "\n";
-                    std::cout << "chatHistory: \n" << chatHistory << std::endl;
-                    //移動視角
-                    chatEnv.chatroomSprite.move(0, MOVEDISTANCE); // 向上移动背景图
-                    view.move(0, MOVEDISTANCE); // 向上移动视图
-                    window.setView(view);
-                    inputBox.move(0, MOVEDISTANCE);
-                    chatEnv.changeView = true;
-                }
-                if(packet.mode_packet == ESCMODE){
-                    std::cout << "收到離開聊天室訊息" << std::endl;
-                    std::string messageText(packet.message);
-                    chatHistory += messageText + "\n";
-                    std::cout << "chatHistory: \n" << chatHistory << std::endl;
-                    //移動視角
-                    chatEnv.chatroomSprite.move(0, 2 * MOVEDISTANCE); // 向上移动背景图
-                    view.move(0, 2 * MOVEDISTANCE); // 向上移动视图
-                    window.setView(view);
-                    inputBox.move(0, 2 * MOVEDISTANCE);
-                    chatEnv.changeView = true;
-                }
-            }
-
-
-
-
-            //view, clear, draw
-            sf::FloatRect spriteBounds = chatEnv.chatroomSprite.getGlobalBounds();
-            sf::Vector2f spriteCenter(spriteBounds.left + spriteBounds.width / 2.0f,
-                                    spriteBounds.top + spriteBounds.height / 2.0f);
-            if(chatEnv.changeView == false){
-                view.setCenter(spriteCenter);
-                window.setView(view);
-                inputBox.setPosition(chatEnv.chatroomSprite.getPosition().x + spriteBounds.width / 3.3f,
-                            chatEnv.chatroomSprite.getPosition().y + spriteBounds.height / 1.115f);
-                chatRecord.setPosition(chatEnv.chatroomSprite.getPosition().x + spriteBounds.width / 8.5f,
-                            chatEnv.chatroomSprite.getPosition().y + spriteBounds.height / 1.14f);
-            }
-            
-            chatRecord.setString(chatHistory);
-            window.clear();
-            window.draw(chatRecord);
-            window.draw(chatEnv.chatroomSprite);
-            window.draw(inputBox);
-
-            sf::Text enterInput(userInput, chatFont, 30);
-            enterInput.setPosition(inputBox.getPosition().x + 5, inputBox.getPosition().y);
-            enterInput.setFillColor(sf::Color::Black);
-            window.draw(enterInput);
+            mainCharacter.draw();
+            otherCharacters.drawAllOtherCharacters();
+            rank.setPosition();
+            rank.draw();
+            chatEnvironment.chatDraw(mainCharacter);
+            window.display();
         }
-        window.display();
     }
     return 0;
 }
