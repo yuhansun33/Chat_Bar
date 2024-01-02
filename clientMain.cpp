@@ -158,9 +158,11 @@ class Rank {
             sf::Vector2f viewSize = view.getSize();
             sf::Vector2f viewCenter = view.getCenter();
             bestRankFrame.setPosition(viewCenter.x + viewSize.x / 2 - 190, viewCenter.y - viewSize.y / 2 + 5);
+            bestRankText.setPosition(viewCenter.x + viewSize.x / 2 - 120, viewCenter.y - viewSize.y / 2 + 5);
             bestRankName.setPosition(viewCenter.x + viewSize.x / 2 - 170, viewCenter.y - viewSize.y / 2 + 30);
             bestRankScore.setPosition(viewCenter.x + viewSize.x / 2 - 60, viewCenter.y - viewSize.y / 2 + 35);
             yourRankFrame.setPosition(viewCenter.x + viewSize.x / 2 - 190, viewCenter.y - viewSize.y / 2 + 70);
+            yourRankText.setPosition(viewCenter.x + viewSize.x / 2 - 130, viewCenter.y - viewSize.y / 2 + 70);
             yourRankName.setPosition(viewCenter.x + viewSize.x / 2 - 170, viewCenter.y - viewSize.y / 2 + 95);
             yourRankScore.setPosition(viewCenter.x + viewSize.x / 2 - 60, viewCenter.y - viewSize.y / 2 + 100);
         }
@@ -570,17 +572,17 @@ int main(int argc, char** argv) {
                 default:
                     break;
             }                 
-            view.setCenter(mainCharacter.getPosition());
-            window.setView(view);
-            window.clear();
-            window.draw(mapSprite);
-            mainCharacter.draw();
-            otherCharacters.drawAllOtherCharacters();
-            rank.setPosition();
-            rank.draw();
-            chatEnvironment.chatDraw(mainCharacter);
-            window.display();
         }
+        view.setCenter(mainCharacter.getPosition());
+        window.setView(view);
+        window.clear();
+        window.draw(mapSprite);
+        mainCharacter.draw();
+        otherCharacters.drawAllOtherCharacters();
+        rank.setPosition();
+        rank.draw();
+        chatEnvironment.chatDraw(mainCharacter);
+        window.display();
     }
     return 0;
 }
