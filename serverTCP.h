@@ -25,6 +25,9 @@ public:
     Packet deserialize(std::string& json_string);
     std::string serialize(Packet packet);
     std::string get_player_name(int sockfd);
+    void getNewRoom(std::string name1, std::string name2);
+    void broadcastMaxTime(sqlServer& sqlServer);
+    void sendSelfTotalTime(sqlServer& sqlServer, char* name, int sockfd);
     
 private:
 	int			        n, listenfd, connfd, sockfd;
@@ -35,6 +38,7 @@ private:
 
     std::unordered_map<std::string, struct Player> players;
     std::unordered_map<int, std::string> disconnect_list; //name, sockfd
+    std::vector<std::vector<std::string>> roomList;
 };
 
 class sqlServer{
@@ -45,9 +49,8 @@ public:
     int db_register();
     bool login_check();
     bool register_check();
-    void addtimelen_check();
+    void addtimelen(std::string name, char* msg);
     void db_information(std::string new_user_name, std::string new_user_password);
-    void db_timelen(std::string name, std::string new_timelen);
     void db_query();
     void db_clear();
     void db_pswd_select();
