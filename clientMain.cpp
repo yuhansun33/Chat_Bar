@@ -66,7 +66,8 @@ class Character {
             window.draw(characterSprite);
             window.draw(characterName);
         }
-        bool mainCharacterMove() {
+        bool mainCharacterMove(bool isWindowFocused) {
+            if(!isWindowFocused) return false;
             bool Changed = false; 
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
                 move(0, -2.7f);
@@ -210,7 +211,7 @@ class OtherCharacters{
         void drawAllOtherCharacters(){
             for(auto& otherCharacter : otherCharactersMap) otherCharacter.second.draw();
         }
-        void updateOtherCharactersByPacket(Character& mainCharacter, Packet& otherCharacterUpdatePacket){
+        std::string updateOtherCharactersByPacket(Character& mainCharacter, Packet& otherCharacterUpdatePacket){
             if(otherCharactersMap.find(otherCharacterUpdatePacket.sender_name) == otherCharactersMap.end()){
                 OtherCharacter otherCharacter(characterTexture, font, otherCharacterUpdatePacket.sender_name, otherCharacterUpdatePacket.x_packet, otherCharacterUpdatePacket.y_packet, mainCharacter.getPosition().x, mainCharacter.getPosition().y);
                 otherCharactersMap[otherCharacterUpdatePacket.sender_name] = otherCharacter;
@@ -230,8 +231,9 @@ class OtherCharacters{
                     systemMessage.setString("");
                 }
             }
+            return minDistanceCharacterName;
         }
-        void updateOtherCharactersByMainCharacter(Character& mainCharacter){
+        std::string updateOtherCharactersByMainCharacter(Character& mainCharacter){
             for(auto& otherCharacter : otherCharactersMap){
                 otherCharacter.second.refreshDistance(mainCharacter.getPosition().x, mainCharacter.getPosition().y);
                 if(otherCharacter.second.getDistance() < minDistance) {
@@ -245,6 +247,7 @@ class OtherCharacters{
                     }
                 }
             }
+            return minDistanceCharacterName;
         }
 };
 
@@ -292,6 +295,8 @@ class ChatEnvironment{
             changeView = false;
         }
 
+        int getChatState(){ return chatState; }
+
         void chatReplyReceivedHandler(Packet& packet){
             if(strcmp(packet.message, "Connect?") == 0){
                 chatState = CHATSTATERECV;
@@ -313,6 +318,10 @@ class ChatEnvironment{
             chatState = CHATSTATESEND;
         }
 
+        void setRequestReceiverName(std::string name){
+            requestReceiverName = name;
+        }
+
         void chatStart(){
             changeView = false;
             chatClock.restart();
@@ -320,24 +329,30 @@ class ChatEnvironment{
             userInput.clear();
         }
 
+        void chatTextHandler(sf::Event& event, bool isWindowFocused){
+            if(!isWindowFocused) return;
+            if(chatState != CHATSTATECHAT) return;
+            std::cout << "text enter" << std::endl;
+            if(event.text.unicode == '\b' && !userInput.empty()){
+                userInput.pop_back();
+            }else if(event.text.unicode >= 32 && event.text.unicode <= 126){
+                userInput += static_cast<char>(event.text.unicode);
+            }            
+        }
+
         void chatKeyHandler(sf::Event& event,  ClientConnectToServer& TCPdata, bool isWindowFocused) {
             if(!isWindowFocused) return;
             if(chatState == CHATSTATENONE){
-                Packet chatRequestPacket(REQMODE, playerID, requestReceiverName.c_str(), 0, 0, "first request");
-                TCPdata.sendData(chatRequestPacket);
-                chatState = CHATSTATESEND;
+                if(event.key.code == sf::Keyboard::X){
+                    Packet chatRequestPacket(REQMODE, playerID, requestReceiverName.c_str(), 0, 0, "first request");
+                    TCPdata.sendData(chatRequestPacket);
+                    chatState = CHATSTATESEND;
+                }
             }
             else if(chatState == CHATSTATECHAT){
-                if(event.type == sf::Event::TextEntered){
-                    if(event.text.unicode == '\b' && !userInput.empty()){
-                        userInput.pop_back();
-                    }else if(event.text.unicode >= 32 && event.text.unicode <= 126){
-                        userInput += static_cast<char>(event.text.unicode);
-                    }
-                }
                 if(event.key.code == sf::Keyboard::Enter){
                     if(userInput.empty()) return;
-                    Packet chatPacket(CHATMODE, "", requestReceiverName.c_str(), 0, 0, userInput.c_str());
+                    Packet chatPacket(CHATMODE, playerID, requestReceiverName.c_str(), 0, 0, userInput.c_str());
                     TCPdata.sendData(chatPacket);
                     chatHistory += playerID + "  :  " + userInput + "\n";
                     std::cout << "chatHistory: \n" << chatHistory << std::endl;
@@ -445,6 +460,7 @@ class ChatEnvironment{
                 window.draw(requestText);
             }
             if(chatState == CHATSTATECHAT){
+                window.clear();
                 sf::FloatRect spriteBounds = chatroomSprite.getGlobalBounds();
                 sf::Vector2f spriteCenter(spriteBounds.left + spriteBounds.width / 2.0f,
                                         spriteBounds.top + spriteBounds.height / 2.0f);
@@ -535,7 +551,6 @@ int main(int argc, char** argv) {
     ChatEnvironment chatEnvironment;
     TCPdata.turnOnNonBlock();
     Rank rank(font, playerID);
-
     float aspectRatio       = 0;
     bool isWindowFocused    = true;
     while (window.isOpen()) {
@@ -546,19 +561,25 @@ int main(int argc, char** argv) {
             if (event.type == sf::Event::LostFocus)     isWindowFocused = false; 
             if (event.type == sf::Event::Resized)       aspectRatio = viewResize(event);
             if (event.type == sf::Event::KeyPressed)    chatEnvironment.chatKeyHandler(event, TCPdata, isWindowFocused);
+            if (event.type == sf::Event::TextEntered)   chatEnvironment.chatTextHandler(event, isWindowFocused);
         }
-        if (mainCharacter.mainCharacterMove()) {
+        if(chatEnvironment.getChatState() == CHATSTATECHAT) goto chat;
+        if (mainCharacter.mainCharacterMove(isWindowFocused)) {
             Packet packet(MAPMODE, playerID, "", mainCharacter.getPosition().x, mainCharacter.getPosition().y, "");
             TCPdata.sendData(packet);
-            otherCharacters.updateOtherCharactersByMainCharacter(mainCharacter);
+            std::string minDistanceCharacterName = otherCharacters.updateOtherCharactersByMainCharacter(mainCharacter);
+            chatEnvironment.setRequestReceiverName(minDistanceCharacterName);
         }
         while(true){
             Packet clientReceivedPacket = TCPdata.receiveDataNonBlock();
+            if(clientReceivedPacket.mode_packet == EMPTYMODE) break;
+            std::string minDistanceCharacterName;
             switch (clientReceivedPacket.mode_packet) {
                 case EMPTYMODE:
                     break;
                 case MAPMODE:
-                    otherCharacters.updateOtherCharactersByPacket(mainCharacter, clientReceivedPacket);
+                    minDistanceCharacterName = otherCharacters.updateOtherCharactersByPacket(mainCharacter, clientReceivedPacket);
+                    chatEnvironment.setRequestReceiverName(minDistanceCharacterName);
                     break;
                 case REQMODE:
                     chatEnvironment.chatReplyReceivedHandler(clientReceivedPacket);
@@ -569,10 +590,9 @@ int main(int argc, char** argv) {
                 case RANKMODE:
                     rank.updateRank(clientReceivedPacket.sender_name, clientReceivedPacket.message);
                     break;
-                default:
-                    break;
-            }                 
+            }
         }
+        chatEnvironment.chatRequestReceiveHandler(TCPdata, mainCharacter);
         view.setCenter(mainCharacter.getPosition());
         window.setView(view);
         window.clear();
@@ -581,6 +601,8 @@ int main(int argc, char** argv) {
         otherCharacters.drawAllOtherCharacters();
         rank.setPosition();
         rank.draw();
+chat:
+        chatEnvironment.chatHandler(TCPdata);
         chatEnvironment.chatDraw(mainCharacter);
         window.display();
     }
