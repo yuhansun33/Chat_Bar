@@ -151,6 +151,8 @@ class ChatRoomIcons{
             for(auto& chatRoomIcon : chatRoomIcons) chatRoomIcon.draw();
             if(minDistance < CHATDISTANCE){
                 systemMessage.setString("Press Z to join the ChatRoom!");
+            }else if(systemMessage.getString() == "Press Z to join the ChatRoom!"){
+                systemMessage.setString("");
             }
         }
         void addChatRoomIcon(Packet& chatRoomIconPacket, Character& mainCharacter){
@@ -313,7 +315,7 @@ class OtherCharacters{
                 if(minDistance < CHATDISTANCE) {
                     std::string message =  "Press X to ask " + minDistanceCharacterName + " to ChatBar!";
                     systemMessage.setString(message);
-                }else {
+                }else if(systemMessage.getString() == "Press X to ask " + minDistanceCharacterName + " to ChatBar!"){
                     systemMessage.setString("");
                 }
             }
@@ -339,17 +341,26 @@ class OtherCharacters{
 
 class ChatEnvironment{
     private:
+        int clockSeconds;
         int chatState;
+        bool isFriendRequstCancealed;
         bool changeView;
+        std::string chatTimeStr;
         std::string requestSenderName;
         std::string requestReceiverName;
+        sf::Texture friendReceiveTexture;
         sf::Texture requestTexture;
         sf::Texture chatroomTexture;
+        sf::Texture chatClockTexture;
+        sf::Sprite friendReceiveSprite;
         sf::Sprite requestSprite;
         sf::Sprite chatroomSprite;
+        sf::Sprite chatClockSprite;
         sf::Clock chatClock;
+        sf::Text friendSendText;
         sf::Text requestText;
         sf::Text chatRecord;
+        sf::Text chatTimeText;
         std::string chatHistory;
         std::string userInput;
         sf::RectangleShape chatInputBox;
@@ -363,15 +374,38 @@ class ChatEnvironment{
                 perror("chatroom圖片加載失敗");
                 exit(-1);
             }
+            if(!chatClockTexture.loadFromFile("Assets/Pictures/chatclock.png")){
+                perror("chatclock圖片加載失敗");
+                exit(-1);
+            }
+            if(!friendReceiveTexture.loadFromFile("Assets/Pictures/friendrequest.png")){
+                perror("friend圖片加載失敗");
+                exit(-1);
+            }
             chatInputBox.setSize(sf::Vector2f(300, 35));
             chatInputBox.setFillColor(sf::Color::White);
             requestSprite.setTexture(requestTexture);
             requestSprite.setScale(0.5f, 0.5f);
             chatroomSprite.setTexture(chatroomTexture);
             chatroomSprite.setScale(0.45f, 0.35f);
+            chatTimeText.setFont(chatFont);
+            chatTimeText.setCharacterSize(50);
+            chatTimeText.setFillColor(sf::Color::White);
+            chatTimeText.setPosition(650, 80);
+            chatClockSprite.setTexture(chatClockTexture);
+            chatClockSprite.setScale(0.2f, 0.15f);
+            chatClockSprite.setPosition(550, 70);
+            friendReceiveSprite.setTexture(friendReceiveTexture);
+            friendReceiveSprite.setScale(0.4f, 0.3f);
+            friendReceiveSprite.setPosition(100, 100);
             requestText.setFont(font);
             requestText.setCharacterSize(30);
             requestText.setFillColor(brown);
+            friendSendText.setFont(chatFont);
+            friendSendText.setCharacterSize(30);
+            friendSendText.setFillColor(sf::Color::White);
+            friendSendText.setPosition(150, 150);
+            friendSendText.setString("Press Ctrl+F to send friend request or Press Ctrl+I to ignore it!");
             chatRecord.setFont(chatFont);
             chatRecord.setCharacterSize(30);
             chatRecord.setFillColor(sf::Color::White);
@@ -379,6 +413,7 @@ class ChatEnvironment{
             userInput.clear();
             chatState = CHATSTATENONE;
             changeView = false;
+            isFriendRequstCancealed = false;
         }
 
         int getChatState(){ return chatState; }
@@ -444,6 +479,7 @@ class ChatEnvironment{
                     std::cout << "chatHistory: \n" << chatHistory << std::endl;
                     userInput.clear();
                     chatroomSprite.move(0, MOVEDISTANCE); 
+                    chatTimeText.move(0, MOVEDISTANCE);
                     view.move(0, MOVEDISTANCE); 
                     window.setView(view);
                     chatInputBox.move(0, MOVEDISTANCE);
@@ -464,6 +500,10 @@ class ChatEnvironment{
                     std::cout << "minutes: " << minutesStr << " min" << std::endl;
                     Packet timePacket(TIMEMODE, playerID, "", 0, 0, minutesStr);
                     TCPdata.sendData(timePacket);
+                }
+                if(event.key.code == sf::Keyboard::BackSpace){
+                    if(userInput.empty()) return;
+                    userInput.pop_back();
                 }
             }
         }
@@ -546,21 +586,29 @@ class ChatEnvironment{
                     chatRecord.setPosition(chatroomSprite.getPosition().x + spriteBounds.width / 8.5f,
                                 chatroomSprite.getPosition().y + spriteBounds.height / 1.14f);
                 }
-                
+                getChatTime();
                 chatRecord.setString(chatHistory);
                 window.draw(chatRecord);
                 window.draw(chatroomSprite);
                 window.draw(chatInputBox);
-
                 sf::Text enterInput(userInput, chatFont, 30);
                 enterInput.setPosition(chatInputBox.getPosition().x + 5, chatInputBox.getPosition().y);
                 enterInput.setFillColor(sf::Color::Black);
                 window.draw(enterInput);
+                window.draw(chatTimeText);
+                window.draw(chatClockSprite);
+                if(clockSeconds > 60 and !isFriendRequstCancealed) window.draw(friendSendText);
             }
         }
 
         void startTimer(){chatClock.restart();}
-        sf::Time getChatTime(){return chatClock.getElapsedTime();}
+        sf::Time getChatTime(){
+            sf::Time timeCount = chatClock.getElapsedTime();
+            clockSeconds = static_cast<int>(timeCount.asSeconds());
+            chatTimeStr = std::to_string(clockSeconds) + "sec";
+            chatTimeText.setString(chatTimeStr);
+            return timeCount;
+        }
 };
 
 
@@ -592,11 +640,7 @@ void initClientBasicElements(){
     systemMessage.setFont(font);
     systemMessage.setCharacterSize(50);
     systemMessage.setFillColor(lavenderBlush);
-    sf::Vector2f viewSize = view.getSize();
-    sf::Vector2f viewCenter = view.getCenter();
-    float systemMessageX = viewCenter.x - viewSize.x / 2 + 10;
-    float systemMessageY = viewCenter.y + viewSize.y / 2 - systemMessage.getCharacterSize();
-    systemMessage.setPosition(systemMessageX, systemMessageY);
+
     window.create(sf::VideoMode(500, 500), "ChatBar");
     window.setFramerateLimit(60);
     
@@ -604,6 +648,15 @@ void initClientBasicElements(){
     bgm.play();
 
     view.reset(sf::FloatRect(0.f, 0.f, 800.f, 600.f));
+}
+
+void systemMessageDraw(){
+    sf::Vector2f viewSize = view.getSize();
+    sf::Vector2f viewCenter = view.getCenter();
+    float systemMessageX = viewCenter.x - viewSize.x / 2 + 10;
+    float systemMessageY = viewCenter.y + viewSize.y / 2 - systemMessage.getCharacterSize();
+    systemMessage.setPosition(systemMessageX, systemMessageY);
+    window.draw(systemMessage);
 }
 
 float viewResize(sf::Event &event){
@@ -682,7 +735,7 @@ int main(int argc, char** argv) {
         otherCharacters.drawAllOtherCharacters();
         rank.setPosition();
         rank.draw();
-        window.draw(systemMessage);
+        systemMessageDraw();
 chat:
         chatEnvironment.chatHandler(TCPdata);
         chatEnvironment.chatDraw(mainCharacter);
