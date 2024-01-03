@@ -28,17 +28,18 @@
 #include <cppconn/prepared_statement.h>
 
 
-#define EMPTYMODE    -1
-#define MAPMODE      0
-#define CHATMODE     1
-#define REQMODE      2
-#define INITMODE     3
-#define LOGINMODE    4
-#define REGISTERMODE 5
-#define ESCMODE      6
-#define TIMEMODE     7
-#define ROOMMODE      8
-#define RANKMODE     9
+#define EMPTYMODE       -1
+#define MAPMODE         0
+#define CHATMODE        1
+#define REQMODE         2
+#define INITMODE        3
+#define LOGINMODE       4
+#define REGISTERMODE    5
+#define ESCMODE         6
+#define TIMEMODE        7
+#define ROOMMODE        8
+#define RANKMODE        9
+#define JOINMODE        10
 
 #define REG_SUCCESS    0
 #define REG_REPEAT     1

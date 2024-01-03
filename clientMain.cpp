@@ -28,6 +28,82 @@ classes:
     Rank: 計分框的class
 */
 
+class ChatRoomIcon{
+    private:
+        sf::Texture chatRoomIconTexture;
+        sf::Sprite chatRoomIconSprite;
+        sf::Vector2f chatRoomIconPostion; 
+        int chatRoomIconID;
+        float distance;
+    public:
+        ChatRoomIcon(float dist):distance(dist){};
+        ChatRoomIcon(Packet& chatRoomIconPacket, Character& mainCharacter){
+            if(!chatRoomIconTexture.loadFromFile("Assets/Pictures/chatroomicon.png")){
+                perror("chatroom圖片加載失敗");
+                exit(-1);
+            }
+            chatRoomIconID = int(chatRoomIconPacket.sender_name);
+            chatRoomIconPostion = sf::Vector2f(chatRoomIconPacket.x_packet, chatRoomIconPacket.y_packet);
+            chatRoomIconSprite.setTexture(chatRoomIconTexture);
+            chatRoomIconSprite.setScale(0.5f, 0.5f);
+            chatRoomIconSprite.setPosition(chatRoomIconPostion);
+            refreshDistance(mainCharacter);
+        }
+        ~ChatRoomIcon(){};
+        void draw(){
+            window.draw(chatRoomIconSprite);
+        }
+        float getDistance(){
+            return distance;
+        }
+        float refreshDistance(Character& character){
+            return distance = sqrt(pow(character.getPosition().x - chatRoomIconPostion.x, 2) + pow(character.getPosition().y - chatRoomIconPostion.y, 2));
+        }
+        void sendChatRoomRequest(sf::Event& event, ClientConnectToServer& TCPdata){
+            if(event.key.code == sf::Keyboard::Z){
+                Packet chatRequestPacket(JOINMODE, "", (char*)chatRoomIconID, 0, 0, "No");
+                TCPdata.sendData(chatRequestPacket);
+            }
+        }
+};
+
+class ChatRoomIcons{
+    private:
+        float minDistance;
+        ChatRoomIcon minDistanceChatRoomIcon;
+        std::vector<ChatRoomIcon> chatRoomIcons;
+    public:
+        ChatRoomIcons(){
+            chatRoomIcons.resize(1000);
+            minDistance = 100000000;
+        }
+        ~ChatRoomIcons(){};
+        void draw(){
+            for(auto& chatRoomIcon : chatRoomIcons) chatRoomIcon.draw();
+            if(minDistance < CHATDISTANCE){
+                systemMessage.setString("Press Z to join the ChatRoom!");
+            }
+        }
+        void addChatRoomIcon(Packet& chatRoomIconPacket, Character& mainCharacter){
+            ChatRoomIcon chatRoomIcon(chatRoomIconPacket, mainCharacter);
+            int chatRoomIconID = int(chatRoomIconPacket.receiver_name);
+            chatRoomIcons[chatRoomIconID] = chatRoomIcon;
+            if(chatRoomIcon.getDistance() < minDistance){
+                minDistance = chatRoomIcon.getDistance();
+                minDistanceChatRoomIcon = chatRoomIcon;
+            }
+        }
+        void updateChatRoomIcons(Character& mainCharacter){
+            for(auto& chatRoomIcon : chatRoomIcons){
+                if(chatRoomIcon.getDistance() < minDistance){
+                    minDistance = chatRoomIcon.getDistance();
+                    minDistanceChatRoomIcon = chatRoomIcon;
+                }
+            }
+        }
+
+};
+
 class Character {
     private:
         sf::Sprite characterSprite;
@@ -404,12 +480,6 @@ class ChatEnvironment{
                 TCPdata.sendData(chatRequestPacket);
                 chatState = CHATSTATENONE;
             }
-            sf::Vector2f viewSize = view.getSize();
-            sf::Vector2f viewCenter = view.getCenter();
-            float systemMessageX = viewCenter.x - viewSize.x / 2 + 10;
-            float systemMessageY = viewCenter.y + viewSize.y / 2 - systemMessage.getCharacterSize();
-            systemMessage.setPosition(systemMessageX, systemMessageY);
-            window.draw(systemMessage);
         }
 
         void chatHandler(ClientConnectToServer &TCPdata){
@@ -447,12 +517,6 @@ class ChatEnvironment{
         void chatDraw(Character& mainCharacter) {
             sf::Vector2f viewCenter = view.getCenter();
             sf::Vector2f viewSize = view.getSize();
-            if(chatState == CHATSTATENONE or chatState == CHATSTATESEND){
-                float systemMessageX = viewCenter.x - viewSize.x / 2 + 10;
-                float systemMessageY = viewCenter.y + viewSize.y / 2 - systemMessage.getCharacterSize();
-                systemMessage.setPosition(systemMessageX, systemMessageY);
-                window.draw(systemMessage);
-            }
             if(chatState == CHATSTATERECV){
                 requestSprite.setPosition(mainCharacter.getPosition().x - 150, mainCharacter.getPosition().y - 150);
                 window.draw(requestSprite);
@@ -518,7 +582,11 @@ void initClientBasicElements(){
     systemMessage.setFont(font);
     systemMessage.setCharacterSize(50);
     systemMessage.setFillColor(lavenderBlush);
-
+    sf::Vector2f viewSize = view.getSize();
+    sf::Vector2f viewCenter = view.getCenter();
+    float systemMessageX = viewCenter.x - viewSize.x / 2 + 10;
+    float systemMessageY = viewCenter.y + viewSize.y / 2 - systemMessage.getCharacterSize();
+    systemMessage.setPosition(systemMessageX, systemMessageY);
     window.create(sf::VideoMode(500, 500), "ChatBar");
     window.setFramerateLimit(60);
     
@@ -590,6 +658,9 @@ int main(int argc, char** argv) {
                 case RANKMODE:
                     rank.updateRank(clientReceivedPacket.sender_name, clientReceivedPacket.message);
                     break;
+                case ROOMMODE:
+
+                    break;
             }
         }
         chatEnvironment.chatRequestReceiveHandler(TCPdata, mainCharacter);
@@ -601,6 +672,7 @@ int main(int argc, char** argv) {
         otherCharacters.drawAllOtherCharacters();
         rank.setPosition();
         rank.draw();
+        window.draw(systemMessage);
 chat:
         chatEnvironment.chatHandler(TCPdata);
         chatEnvironment.chatDraw(mainCharacter);
