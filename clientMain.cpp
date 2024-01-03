@@ -27,83 +27,6 @@ classes:
     OtherCharacters: 其他玩家的集合
     Rank: 計分框的class
 */
-
-class ChatRoomIcon{
-    private:
-        sf::Texture chatRoomIconTexture;
-        sf::Sprite chatRoomIconSprite;
-        sf::Vector2f chatRoomIconPostion; 
-        int chatRoomIconID;
-        float distance;
-    public:
-        ChatRoomIcon(float dist):distance(dist){};
-        ChatRoomIcon(Packet& chatRoomIconPacket, Character& mainCharacter){
-            if(!chatRoomIconTexture.loadFromFile("Assets/Pictures/chatroomicon.png")){
-                perror("chatroom圖片加載失敗");
-                exit(-1);
-            }
-            chatRoomIconID = int(chatRoomIconPacket.sender_name);
-            chatRoomIconPostion = sf::Vector2f(chatRoomIconPacket.x_packet, chatRoomIconPacket.y_packet);
-            chatRoomIconSprite.setTexture(chatRoomIconTexture);
-            chatRoomIconSprite.setScale(0.5f, 0.5f);
-            chatRoomIconSprite.setPosition(chatRoomIconPostion);
-            refreshDistance(mainCharacter);
-        }
-        ~ChatRoomIcon(){};
-        void draw(){
-            window.draw(chatRoomIconSprite);
-        }
-        float getDistance(){
-            return distance;
-        }
-        float refreshDistance(Character& character){
-            return distance = sqrt(pow(character.getPosition().x - chatRoomIconPostion.x, 2) + pow(character.getPosition().y - chatRoomIconPostion.y, 2));
-        }
-        void sendChatRoomRequest(sf::Event& event, ClientConnectToServer& TCPdata){
-            if(event.key.code == sf::Keyboard::Z){
-                Packet chatRequestPacket(JOINMODE, "", (char*)chatRoomIconID, 0, 0, "No");
-                TCPdata.sendData(chatRequestPacket);
-            }
-        }
-};
-
-class ChatRoomIcons{
-    private:
-        float minDistance;
-        ChatRoomIcon minDistanceChatRoomIcon;
-        std::vector<ChatRoomIcon> chatRoomIcons;
-    public:
-        ChatRoomIcons(){
-            chatRoomIcons.resize(1000);
-            minDistance = 100000000;
-        }
-        ~ChatRoomIcons(){};
-        void draw(){
-            for(auto& chatRoomIcon : chatRoomIcons) chatRoomIcon.draw();
-            if(minDistance < CHATDISTANCE){
-                systemMessage.setString("Press Z to join the ChatRoom!");
-            }
-        }
-        void addChatRoomIcon(Packet& chatRoomIconPacket, Character& mainCharacter){
-            ChatRoomIcon chatRoomIcon(chatRoomIconPacket, mainCharacter);
-            int chatRoomIconID = int(chatRoomIconPacket.receiver_name);
-            chatRoomIcons[chatRoomIconID] = chatRoomIcon;
-            if(chatRoomIcon.getDistance() < minDistance){
-                minDistance = chatRoomIcon.getDistance();
-                minDistanceChatRoomIcon = chatRoomIcon;
-            }
-        }
-        void updateChatRoomIcons(Character& mainCharacter){
-            for(auto& chatRoomIcon : chatRoomIcons){
-                if(chatRoomIcon.getDistance() < minDistance){
-                    minDistance = chatRoomIcon.getDistance();
-                    minDistanceChatRoomIcon = chatRoomIcon;
-                }
-            }
-        }
-
-};
-
 class Character {
     private:
         sf::Sprite characterSprite;
@@ -164,6 +87,93 @@ class Character {
             return Changed;
         }
 };
+class ChatRoomIcon{
+    private:
+        sf::Texture chatRoomIconTexture;
+        sf::Sprite chatRoomIconSprite;
+        sf::Vector2f chatRoomIconPostion; 
+        int chatRoomIconID;
+        float distance;
+    public:
+        ChatRoomIcon(){
+            if(!chatRoomIconTexture.loadFromFile("Assets/Pictures/chatroomicon.png")){
+                perror("chatroom圖片加載失敗");
+                exit(-1);
+            }
+            chatRoomIconSprite.setTexture(chatRoomIconTexture);
+            chatRoomIconSprite.setScale(0.5f, 0.5f);
+            distance = INFINDISTANCE;
+
+        }
+        ChatRoomIcon(Packet& chatRoomIconPacket, Character& mainCharacter){
+            if(!chatRoomIconTexture.loadFromFile("Assets/Pictures/chatroomicon.png")){
+                perror("chatroom圖片加載失敗");
+                exit(-1);
+            }
+            chatRoomIconID = std::stoi(chatRoomIconPacket.sender_name);
+            chatRoomIconPostion = sf::Vector2f(chatRoomIconPacket.x_packet, chatRoomIconPacket.y_packet);
+            chatRoomIconSprite.setTexture(chatRoomIconTexture);
+            chatRoomIconSprite.setScale(0.5f, 0.5f);
+            chatRoomIconSprite.setPosition(chatRoomIconPostion);
+            refreshDistance(mainCharacter);
+        }
+        ~ChatRoomIcon(){};
+        void draw(){
+            window.draw(chatRoomIconSprite);
+        }
+        float getDistance(){
+            return distance;
+        }
+        float refreshDistance(Character& character){
+            return distance = sqrt(pow(character.getPosition().x - chatRoomIconPostion.x, 2) + pow(character.getPosition().y - chatRoomIconPostion.y, 2));
+        }
+        void sendChatRoomRequest(sf::Event& event, ClientConnectToServer& TCPdata){
+            if(event.key.code == sf::Keyboard::Z){
+                std::string chatRoomIconIDStr = std::to_string(chatRoomIconID);
+                Packet chatRequestPacket(JOINMODE, "", chatRoomIconIDStr.c_str(), 0, 0, "No");
+                TCPdata.sendData(chatRequestPacket);
+            }
+        }
+};
+
+class ChatRoomIcons{
+    private:
+        float minDistance;
+        ChatRoomIcon minDistanceChatRoomIcon;
+        std::vector<ChatRoomIcon> chatRoomIcons;
+    public:
+        ChatRoomIcons(){
+            chatRoomIcons.reserve(1000);
+            minDistance = INFINDISTANCE;
+        }
+        ~ChatRoomIcons(){};
+        void draw(){
+            for(auto& chatRoomIcon : chatRoomIcons) chatRoomIcon.draw();
+            if(minDistance < CHATDISTANCE){
+                systemMessage.setString("Press Z to join the ChatRoom!");
+            }
+        }
+        void addChatRoomIcon(Packet& chatRoomIconPacket, Character& mainCharacter){
+            ChatRoomIcon chatRoomIcon(chatRoomIconPacket, mainCharacter);
+            int chatRoomIconID = std::stoi(chatRoomIconPacket.sender_name);
+            chatRoomIcons[chatRoomIconID] = chatRoomIcon;
+            if(chatRoomIcon.getDistance() < minDistance){
+                minDistance = chatRoomIcon.getDistance();
+                minDistanceChatRoomIcon = chatRoomIcon;
+            }
+        }
+        void updateChatRoomIcons(Character& mainCharacter){
+            for(auto& chatRoomIcon : chatRoomIcons){
+                if(chatRoomIcon.getDistance() < minDistance){
+                    minDistance = chatRoomIcon.getDistance();
+                    minDistanceChatRoomIcon = chatRoomIcon;
+                }
+            }
+        }
+
+};
+
+
 
 class OtherCharacter : public Character {
     friend class OtherCharacters;
@@ -272,7 +282,7 @@ class OtherCharacters{
         std::unordered_map<std::string, OtherCharacter> otherCharactersMap;
     public:
         OtherCharacters(ClientConnectToServer &TCPdata){
-            minDistance = 10000000;
+            minDistance = INFINDISTANCE;
             Packet initOtherCharacterPacket = TCPdata.receiveData();
             if(initOtherCharacterPacket.mode_packet != INITMODE) return;
             int otherCharacterNumber = (int)initOtherCharacterPacket.x_packet;

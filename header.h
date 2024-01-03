@@ -52,6 +52,7 @@
 
 #define NOWHERE             -500         
 #define CHATDISTANCE        100
+#define INFINDISTANCE       1000000
 #define GAMEPORT            11130
 #define LOGINPORT           11131
 #define NAMELINE            128
