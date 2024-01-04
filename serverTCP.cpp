@@ -2,11 +2,9 @@
 #include "serverTCP.h"
 #include "readline.h"
 
-//======= serverTCP
 serverTCP::serverTCP(){
     signal(SIGCHLD, sig_chld);
     listenfd = socket(AF_INET, SOCK_STREAM, 0);
-
     // Set listenfd to non-blocking mode
     int flags = fcntl(listenfd, F_GETFL, 0);
     if (flags == -1) { std::cout << "fcntl F_GETFL error" << std::endl; }
@@ -20,15 +18,12 @@ void serverTCP::sig_chld(int signo){
     return;
 }
 void serverTCP::TCP_connect(int port){
-    
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family      = AF_INET;
 	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	servaddr.sin_port        = htons(port);
-
     bind(listenfd, (SA *) &servaddr, sizeof(servaddr));
     listen(listenfd, LISTENQ);
-    
     maxfd = listenfd;
     FD_ZERO(&rset);
     FD_ZERO(&allset);
@@ -60,7 +55,7 @@ void serverTCP::login_mainloop(){
             Packet packet = receiveData_login(connfd);
             std::cout << "sender: " << packet.sender_name << std::endl;
             //放入 vector
-            Player new_player(connfd, LOGINMODE, 0, 0);
+            Player new_player(connfd, LOGINMODE, 0, 0, packet.sender_name);
             players[packet.sender_name] = new_player;
         }
         //看每個 client
@@ -170,18 +165,28 @@ void serverTCP::game_handle(sqlServer& sqlServer){
             break;
         }
         case REQMODE: {
+            int sender_sockfd = players[packet.sender_name].sockfd;
             int receiver_sockfd = players[packet.receiver_name].sockfd;
+            int receiver_roomID = players[packet.receiver_name].roomID;
             std::cout << "receiver_sockfd: " << receiver_sockfd << std::endl;
             if(strcmp(packet.message, "first request") == 0){
                 Packet new_packet(REQMODE, packet.sender_name, packet.receiver_name, 0, 0, "Connect?");
+                if(receiver_roomID != -1){
+                    Packet new_packet(REQMODE, packet.sender_name, packet.receiver_name, 0, 0, "Can chat");
+                    sendData(new_packet, sender_sockfd);
+                    roomList[receiver_roomID].push_back(players[packet.sender_name]);
+                    players[packet.sender_name].roomID = receiver_roomID;
+                    return;
+                }
                 sendData(new_packet, receiver_sockfd);
                 std::cout << "get first request, send \"Connect?\"" << std::endl;
             }else if(strcmp(packet.message, "Yes") == 0){
                 Packet new_packet(REQMODE, packet.sender_name, packet.receiver_name, 0, 0, "Can chat");
                 sendData(new_packet, receiver_sockfd);
+                std::cout << packet.sender_name << " ==> " << packet.receiver_name << std::endl;
                 std::cout << "recv Yes, send \"Can chat\"" << std::endl;
                 //加入 roomList 並 broadcast
-                getNewRoom(packet.sender_name, packet.receiver_name);
+                getNewRoom(players[packet.sender_name], players[packet.receiver_name]);
             }else if(strcmp(packet.message, "No") == 0){
                 Packet new_packet(REQMODE, packet.sender_name, packet.receiver_name, 0, 0, "Can not chat");
                 sendData(new_packet, receiver_sockfd);
@@ -190,18 +195,36 @@ void serverTCP::game_handle(sqlServer& sqlServer){
             break;
         }
         case CHATMODE: {
-            int receiver_sockfd = players[packet.receiver_name].sockfd;
+            // int receiver_sockfd = players[packet.receiver_name].sockfd;
             std::cout << "send chat message: " << packet.sender_name << std::endl;
             Packet new_packet(CHATMODE, packet.sender_name, packet.receiver_name, 0, 0, packet.message);
-            sendData(new_packet, receiver_sockfd);
-            std::cout << " ==> " << packet.receiver_name << std::endl;
+            // sendData(new_packet, receiver_sockfd);
+            broadcast_chatroom(new_packet, sockfd);
+            // std::cout << " ==> " << packet.receiver_name << std::endl;
             break;
         }
         case ESCMODE: {
             int receiver_sockfd = players[packet.receiver_name].sockfd;
             std::cout << "send esc message: " << packet.sender_name;
             Packet new_packet(ESCMODE, packet.sender_name, packet.receiver_name, 0, 0, packet.message);
-            sendData(new_packet, receiver_sockfd);
+            broadcast_chatroom(new_packet, sockfd);
+            //清空聊天室
+            int roomID = players[packet.sender_name].roomID;
+            auto& room = roomList[roomID];
+            for (auto it = room.begin(); it != room.end(); /* no increment here */) {
+                if (it->playerID == packet.sender_name) {
+                    it = room.erase(it);  // erase 返回下一个有效迭代器
+                    break;  
+                } else {
+                    ++it;  // 只在未删除元素时递增迭代器
+                }
+            }
+            if(room.empty()){
+                roomList.erase(roomList.begin() + roomID);
+                Packet room_packet(ROOMMODE, std::to_string(roomID), "", NOWHERE, NOWHERE, "");
+                broadcast_xy(room_packet, -500); 
+            }
+            players[packet.sender_name].roomID = -1;
             std::cout << " ==> " << packet.receiver_name << std::endl;
             break;
         }
@@ -216,11 +239,17 @@ void serverTCP::game_handle(sqlServer& sqlServer){
             broadcastMaxTime(sqlServer);
             break;
         }
+        case JOINMODE: {
+            int roomID = atoi(packet.receiver_name);
+            players[packet.sender_name].roomID = roomID;
+            roomList[roomID].push_back(players[packet.sender_name]);
+            break;
+        }
     }
 }
 void serverTCP::new_game_handle(sqlServer& sqlServer){
     //init packet
-    Packet init_packet(INITMODE, "", "", (float)players.size(), 0, "");
+    Packet init_packet(INITMODE, "", "", (float)players.size(), (float)roomList.size(), "");
     sendData(init_packet, connfd);
     //送所有人位置
     for (auto& player : players){
@@ -229,8 +258,9 @@ void serverTCP::new_game_handle(sqlServer& sqlServer){
     }
     //讀 ID
     Packet packet = receiveData_game(connfd);
+    broadcast_xy(packet, connfd);
     //放入 vector
-    Player new_player(connfd, MAPMODE, packet.x_packet, packet.y_packet);
+    Player new_player(connfd, MAPMODE, packet.x_packet, packet.y_packet, packet.sender_name);
     players[packet.sender_name] = new_player;
     //資料庫放入名字
     sqlServer.db_information(packet.sender_name, "");
@@ -249,7 +279,7 @@ Packet serverTCP::deserialize(std::string& json_string){
     packet = packet.json_to_packet(j);
     return packet;
 }
-void serverTCP::sendData(Packet packet, int sockfd){
+void serverTCP::sendData(Packet& packet, int sockfd){
     std::string data = serialize(packet);
     data += "\n";
     if (send(sockfd, data.c_str(), data.size(), 0) == -1) {
@@ -265,6 +295,7 @@ Packet serverTCP::receiveData_login(int sockfd){
         perror("Failed to receive data");
     }else if(n == 0){
         std::cout << "client disconnected" << std::endl;
+        remove_player(sockfd);
         FD_CLR(sockfd, &allset);
         close(sockfd);
         return Packet();
@@ -272,6 +303,36 @@ Packet serverTCP::receiveData_login(int sockfd){
     std::string data = buffer;
     Packet packet = deserialize(data);
     return packet;
+}
+void serverTCP::remove_player(int sockfd){
+    for (auto play_it = players.begin(); play_it != players.end(); /* no increment here */) {
+        if (play_it->second.sockfd == sockfd) {
+            if(play_it->second.roomID != -1){
+                int roomID = play_it->second.roomID;
+                auto& room = roomList[roomID];
+                for (auto it = room.begin(); it != room.end(); /* no increment here */) {
+                    if (it->playerID == play_it->first) {
+                        it = room.erase(it);  // erase 返回下一个有效迭代器
+                        break;  
+                    } else {
+                        ++it;  // 只在未删除元素时递增迭代器
+                    }
+                }
+                if(room.empty()){
+                    roomList.erase(roomList.begin() + roomID);
+                    Packet room_packet(ROOMMODE, std::to_string(roomID), "", NOWHERE, NOWHERE, "");
+                    broadcast_xy(room_packet, -500); 
+                }
+            }
+            Packet new_packet(MAPMODE, play_it->first, "", NOWHERE, NOWHERE, "");
+            std::cout << "broadcast: " << play_it->first << " disconnected" << std::endl;
+            broadcast_xy(new_packet, sockfd);
+            play_it = players.erase(play_it);  // erase 返回下一个有效迭代器
+            break;  
+        } else {
+            ++play_it;  // 只在未删除元素时递增迭代器
+        }
+    }
 }
 Packet serverTCP::receiveData_game(int sockfd){
     char buffer[MAXLINE];
@@ -298,14 +359,23 @@ Packet serverTCP::receiveData_game(int sockfd){
     Packet packet = deserialize(data);
     return packet;
 }
-void serverTCP::broadcast_xy(Packet packet, int sockfd){
+void serverTCP::broadcast_xy(Packet& packet, int sockfd){
     for (auto& player : players){
         if(player.second.sockfd != sockfd and disconnect_list.find(player.second.sockfd) == disconnect_list.end()){
-            //send
             sendData(packet, player.second.sockfd);
         }
     }
 }
+
+void serverTCP::broadcast_chatroom(Packet& packet, int sockfd){
+    int roomID = players[packet.sender_name].roomID;
+    for(auto& player : roomList[roomID]){
+        if(player.sockfd != sockfd and disconnect_list.find(player.sockfd) == disconnect_list.end()){
+            sendData(packet, player.sockfd);
+        }
+    }
+}
+
 std::string serverTCP::get_player_name(int sockfd){
     for (auto& player : players){
         if(player.second.sockfd == sockfd){
@@ -314,26 +384,30 @@ std::string serverTCP::get_player_name(int sockfd){
     }
     return NULL;
 }
-void serverTCP::getNewRoom(std::string name1, std::string name2){
+void serverTCP::getNewRoom(Player& player1, Player& player2){
     bool findRoom = false;
     static char roomID[10];
     //找空的聊天室
     for(size_t i = 0; i < roomList.size(); i++){
         if(roomList[i].empty()){
-            roomList[i].push_back(name1);
-            roomList[i].push_back(name2);
+            roomList[i].push_back(player1);
+            roomList[i].push_back(player2);
             sprintf(roomID, "%d", i);
             findRoom = true;
         }
     }
     //沒有空的聊天室
     if(findRoom == false){
-        roomList.push_back(std::vector<std::string>{name1, name2});
+        roomList.push_back(std::vector<Player>{player1, player2});
         sprintf(roomID, "%d", roomList.size() - 1);
     }
-    float x_room = (players[name1].x_player + players[name2].x_player) / 2;
-    float y_room = (players[name1].y_player + players[name2].y_player) / 2;
-    Packet room_packet(ROOMMODE, "", "", x_room, y_room, roomID);
+    float x_room = (player1.x_player + player2.x_player) / 2;
+    float y_room = (player1.y_player + player2.y_player) / 2;
+    player1.roomID = atoi(roomID);
+    player2.roomID = atoi(roomID);
+    std::cout << "Player1: " << player1.playerID <<" Player1 sockfd "<< player1.sockfd << " roomID: " << player1.roomID << std::endl;
+    std::cout << "Player2: " << player2.playerID <<" Player2 sockfd "<< player2.sockfd << " roomID: " << player2.roomID << std::endl;
+    Packet room_packet(ROOMMODE, roomID, "", x_room, y_room, "");
     broadcast_xy(room_packet, -500); //broadcast 給所有人
 }
 void serverTCP::broadcastMaxTime(sqlServer& sqlServer){
@@ -420,7 +494,6 @@ bool sqlServer::register_check(){
 }
 void sqlServer::db_user_insert(){
     try {
-        //insert
         prep_stmt = con->prepareStatement("INSERT INTO user (UserName, UserPassword) VALUES (?, ?)");
         prep_stmt->setString(1, user_name);
         prep_stmt->setString(2, user_password);

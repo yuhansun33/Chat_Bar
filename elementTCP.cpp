@@ -8,6 +8,7 @@ Packet::Packet(){
     receiver_name[0] = '\0';
     message[0] = '\0';
 }
+
 Packet::Packet(int mode, std::string sendstr, std::string recvstr, float x, float y, std::string msg){
     mode_packet = mode;
     x_packet = x;
@@ -85,9 +86,11 @@ Packet Packet::json_to_packet(json& j) {
     return p;
 }
 
-Player::Player(int new_sockfd, int mode, float x, float y){
+Player::Player(int new_sockfd, int mode, float x, float y, char* ID){
+    playerID = ID;
     sockfd = new_sockfd;
     mode_player = mode;
     x_player = x;
     y_player = y;
+    roomID = -1;
 }

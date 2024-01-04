@@ -18,14 +18,16 @@ public:
     void game_mainloop();
     void new_game_handle(sqlServer& sqlServer);
     void game_handle(sqlServer& sqlServer);
-    void sendData(Packet packet, int sockfd);
-    void broadcast_xy(Packet packet, int sockfd);
+    void sendData(Packet& packet, int sockfd);
+    void broadcast_xy(Packet& packet, int sockfd);
+    void broadcast_chatroom(Packet& packet, int sockfd);
     Packet receiveData_login(int sockfd);
     Packet receiveData_game(int sockfd);
     Packet deserialize(std::string& json_string);
     std::string serialize(Packet packet);
     std::string get_player_name(int sockfd);
-    void getNewRoom(std::string name1, std::string name2);
+    void remove_player(int sockfd);
+    void getNewRoom(Player& player1, Player& player2);
     void broadcastMaxTime(sqlServer& sqlServer);
     void sendSelfTotalTime(sqlServer& sqlServer, char* name, int sockfd);
     
@@ -38,7 +40,7 @@ private:
 
     std::unordered_map<std::string, struct Player> players;
     std::unordered_map<int, std::string> disconnect_list; //name, sockfd
-    std::vector<std::vector<std::string>> roomList;
+    std::vector<std::vector<Player>> roomList;
 };
 
 class sqlServer{

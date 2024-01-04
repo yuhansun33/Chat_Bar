@@ -50,6 +50,7 @@
 #define CHATSTATESEND  2
 #define CHATSTATECHAT  3
 
+#define VIRTUALFD           -500
 #define NOWHERE             -500         
 #define CHATDISTANCE        100
 #define INFINDISTANCE       1000000
