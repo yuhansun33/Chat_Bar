@@ -157,6 +157,7 @@ int main() {
                         if(registerSuccess == 1){
                             errorText.setColor(sf::Color::Green);
                             errorText.setString("Register success");
+                            errorText.setColor(sf::Color::Red);
                         }
                         else if(registerSuccess == 0) errorText.setString("Register repeat");
                         else if(registerSuccess == -1) errorText.setString("Register failed");
