@@ -331,7 +331,7 @@ void serverTCP::remove_player(int sockfd){
             Packet new_packet(MAPMODE, play_it->first, "", NOWHERE, NOWHERE, "");
             std::cout << "broadcast: " << play_it->first << " disconnected" << std::endl;
             broadcast_xy(new_packet, sockfd);
-            play_it = players.erase(play_it);  // erase 返回下一个有效迭代器
+            // play_it = players.erase(play_it);  // erase 返回下一个有效迭代器
             break;  
         } else {
             ++play_it;  // 只在未删除元素时递增迭代器
