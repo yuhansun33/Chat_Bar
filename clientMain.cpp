@@ -409,7 +409,7 @@ class ChatEnvironment{
                 if(event.key.code == sf::Keyboard::Z){
                     Packet chatRequestPacket(JOINMODE, playerID, requestReceiverName.c_str(), 0, 0, "second request");
                     TCPdata.sendData(chatRequestPacket);
-                    chatState = CHATSTATECHAT;
+                    chatState = CHATSTATESEND;
                 }
             }
             else if(chatState == CHATSTATECHAT){

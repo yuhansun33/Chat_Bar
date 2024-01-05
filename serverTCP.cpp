@@ -243,6 +243,8 @@ void serverTCP::game_handle(sqlServer& sqlServer){
             int roomID = atoi(packet.receiver_name);
             players[packet.sender_name].roomID = roomID;
             roomList[roomID].push_back(players[packet.sender_name]);
+            Packet new_packet(REQMODE, packet.sender_name, packet.receiver_name, 0, 0, "Can chat");
+            sendData(new_packet, players[packet.sender_name].sockfd);
             break;
         }
     }
