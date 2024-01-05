@@ -181,6 +181,7 @@ class ChatRoomIcons{
         void refreshAllChatRoomDistance(Character& mainCharacter){
             minDistance = INFINDISTANCE;
             for(auto& chatRoomIcon : chatRoomIcons){
+                chatRoomIcon.second.refreshDistance(mainCharacter);
                 if(chatRoomIcon.second.getDistance() < minDistance){
                     minDistance = chatRoomIcon.second.getDistance();
                     minDistanceChatRoomIcon = chatRoomIcon.second;
@@ -341,7 +342,7 @@ class ChatEnvironment{
             friendSendText.setCharacterSize(30);
             friendSendText.setFillColor(sf::Color::White);
             friendSendText.setPosition(150, 150);
-            friendSendText.setString("Press Ctrl+F to send friend request or Press Ctrl+I to ignore it!");
+            // friendSendText.setString("Press Ctrl+F to send friend request or Press Ctrl+I to ignore it!");
             chatRecord.setFont(chatFont);
             chatRecord.setCharacterSize(30);
             chatRecord.setFillColor(sf::Color::White);
@@ -469,10 +470,9 @@ class ChatEnvironment{
             }
         }
 
-        void chatHandler(ClientConnectToServer &TCPdata){
+        void chatHandler(Packet& chatPacket, ClientConnectToServer &TCPdata){
             if(chatState != CHATSTATECHAT) return;
-            while(1){
-                Packet chatPacket = TCPdata.receiveDataNonBlock();
+            do{
                 if(chatPacket.mode_packet == EMPTYMODE) break;
                 if(chatPacket.mode_packet == CHATMODE){
                     std::string senderName(chatPacket.sender_name);
@@ -487,8 +487,8 @@ class ChatEnvironment{
                     std::cout << "chatHistory: \n" << chatHistory << std::endl;
                     chatMoveView(2*MOVEDISTANCE);
                 }
-
-            }
+                chatPacket = TCPdata.receiveDataNonBlock();
+            }while(true);
         }
 
         void chatMoveView(float distance = MOVEDISTANCE){
@@ -548,6 +548,7 @@ class ChatEnvironment{
         }
         
         void chatMinDistanceReciever(float chatRoomMinDistance, float characterMinDistance, std::string chatRoomMinName, std::string characterMinName){
+            std::cout << "chatRoomMinDistance: " << chatRoomMinDistance << " characterMinDistance: " << characterMinDistance << std::endl;
             if(chatRoomMinDistance <= characterMinDistance){
                 requestReceiverName = chatRoomMinName;
                 minDistance = chatRoomMinDistance;
@@ -556,6 +557,7 @@ class ChatEnvironment{
                 requestReceiverName = characterMinName;
                 minDistance = characterMinDistance;
             }
+            std::cout << "minDistance: " << minDistance << std::endl;
             if(systemMessageUpdate()) return;
             if(minDistance == chatRoomMinDistance){
                 std::string message =  "Press Z to join the ChatRoom!";
@@ -749,37 +751,61 @@ int main(int argc, char** argv) {
             if (event.type == sf::Event::KeyPressed)    chatEnvironment.chatKeyHandler(event, TCPdata, isWindowFocused);
             if (event.type == sf::Event::TextEntered)   chatEnvironment.chatTextHandler(event, isWindowFocused);
         }
+        while(true){
+            Packet clientReceivedPacket = TCPdata.receiveDataNonBlock();
+            std::string minDistanceCharacterName;
+            if(clientReceivedPacket.mode_packet == EMPTYMODE) break;
+            if(clientReceivedPacket.mode_packet == MAPMODE){
+                otherCharacters.updateOtherCharactersByPacket(mainCharacter, clientReceivedPacket);
+                chatEnvironment.chatMinDistanceReciever(chatRoomIcons.getMinDistance(), otherCharacters.getMinDistance(), chatRoomIcons.getMinDistanceChatRoomIcon(), otherCharacters.getMinDistanceCharacterName());
+            }
+            if(clientReceivedPacket.mode_packet == ROOMMODE){
+                chatRoomIcons.updateChatRoomIconByPacket(clientReceivedPacket, mainCharacter);
+                chatEnvironment.chatMinDistanceReciever(chatRoomIcons.getMinDistance(), otherCharacters.getMinDistance(), chatRoomIcons.getMinDistanceChatRoomIcon(), otherCharacters.getMinDistanceCharacterName());
+            }
+            if(clientReceivedPacket.mode_packet == REQMODE){
+                chatEnvironment.chatReplyReceivedHandler(clientReceivedPacket);
+            }
+            if(clientReceivedPacket.mode_packet == TIMEMODE){
+                rank.updateTime(clientReceivedPacket.message);
+            }
+            if(clientReceivedPacket.mode_packet == RANKMODE){
+                rank.updateRank(clientReceivedPacket.sender_name, clientReceivedPacket.message);
+            }
+            if(clientReceivedPacket.mode_packet == CHATMODE){
+                chatEnvironment.chatHandler(clientReceivedPacket, TCPdata);
+            }
+            if(clientReceivedPacket.mode_packet == ESCMODE){
+                chatEnvironment.chatHandler(clientReceivedPacket, TCPdata);
+            }
+            // switch (clientReceivedPacket.mode_packet) {
+            //     case MAPMODE:
+            //         otherCharacters.updateOtherCharactersByPacket(mainCharacter, clientReceivedPacket);
+            //         chatEnvironment.chatMinDistanceReciever(chatRoomIcons.getMinDistance(), otherCharacters.getMinDistance(), chatRoomIcons.getMinDistanceChatRoomIcon(), otherCharacters.getMinDistanceCharacterName());
+            //         break;
+            //     case REQMODE:
+            //         chatEnvironment.chatReplyReceivedHandler(clientReceivedPacket);
+            //         break;
+            //     case TIMEMODE:
+            //         rank.updateTime(clientReceivedPacket.message);
+            //         break;
+            //     case RANKMODE:
+            //         rank.updateRank(clientReceivedPacket.sender_name, clientReceivedPacket.message);
+            //         break;
+            //     case ROOMMODE:                    
+            //         chatRoomIcons.updateChatRoomIconByPacket(clientReceivedPacket, mainCharacter);
+            //         chatEnvironment.chatMinDistanceReciever(chatRoomIcons.getMinDistance(), otherCharacters.getMinDistance(), chatRoomIcons.getMinDistanceChatRoomIcon(), minDistanceCharacterName);
+            //         break;
+            // }
+        }
         if(chatEnvironment.getChatState() == CHATSTATECHAT) goto chat;
         if (mainCharacter.mainCharacterMove(isWindowFocused)) {
             Packet packet(MAPMODE, playerID, "", mainCharacter.getPosition().x, mainCharacter.getPosition().y, "");
             TCPdata.sendData(packet);
             otherCharacters.updateOtherCharactersByMainCharacter(mainCharacter);
             chatRoomIcons.refreshAllChatRoomDistance(mainCharacter);
+            std::cout << "minDistance: " << chatRoomIcons.getMinDistance() << std::endl;
             chatEnvironment.chatMinDistanceReciever(chatRoomIcons.getMinDistance(), otherCharacters.getMinDistance(), chatRoomIcons.getMinDistanceChatRoomIcon(), otherCharacters.getMinDistanceCharacterName());
-        }
-        while(true){
-            Packet clientReceivedPacket = TCPdata.receiveDataNonBlock();
-            if(clientReceivedPacket.mode_packet == EMPTYMODE) break;
-            std::string minDistanceCharacterName;
-            switch (clientReceivedPacket.mode_packet) {
-                case MAPMODE:
-                    otherCharacters.updateOtherCharactersByPacket(mainCharacter, clientReceivedPacket);
-                    chatEnvironment.chatMinDistanceReciever(chatRoomIcons.getMinDistance(), otherCharacters.getMinDistance(), chatRoomIcons.getMinDistanceChatRoomIcon(), otherCharacters.getMinDistanceCharacterName());
-                    break;
-                case REQMODE:
-                    chatEnvironment.chatReplyReceivedHandler(clientReceivedPacket);
-                    break;
-                case TIMEMODE:
-                    rank.updateTime(clientReceivedPacket.message);
-                    break;
-                case RANKMODE:
-                    rank.updateRank(clientReceivedPacket.sender_name, clientReceivedPacket.message);
-                    break;
-                case ROOMMODE:                    
-                    chatRoomIcons.updateChatRoomIconByPacket(clientReceivedPacket, mainCharacter);
-                    chatEnvironment.chatMinDistanceReciever(chatRoomIcons.getMinDistance(), otherCharacters.getMinDistance(), chatRoomIcons.getMinDistanceChatRoomIcon(), minDistanceCharacterName);
-                    break;
-            }
         }
         chatEnvironment.chatRequestReceiveHandler(TCPdata, mainCharacter);
         view.setCenter(mainCharacter.getPosition());
@@ -793,7 +819,6 @@ int main(int argc, char** argv) {
         chatRoomIcons.draw();
         chatEnvironment.systemMessageDraw();
 chat:
-        chatEnvironment.chatHandler(TCPdata);
         chatEnvironment.chatDraw(mainCharacter);
         window.display();
     }

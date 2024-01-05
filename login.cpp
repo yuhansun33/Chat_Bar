@@ -154,7 +154,10 @@ int main() {
                     } else if (registerButton.getGlobalBounds().contains(mousePos)) {
                         std::cout << "Register" << std::endl;
                         registerSuccess = Register(client, username, password, firstConnection);
-                        if(registerSuccess == 1) errorText.setString("Register success");
+                        if(registerSuccess == 1){
+                            errorText.setColor(sf::Color::Green);
+                            errorText.setString("Register success");
+                        }
                         else if(registerSuccess == 0) errorText.setString("Register repeat");
                         else if(registerSuccess == -1) errorText.setString("Register failed");
                         typingUsername = true;

@@ -297,7 +297,6 @@ Packet serverTCP::receiveData_login(int sockfd){
         perror("Failed to receive data");
     }else if(n == 0){
         std::cout << "client disconnected" << std::endl;
-        remove_player(sockfd);
         FD_CLR(sockfd, &allset);
         close(sockfd);
         return Packet();
@@ -307,11 +306,14 @@ Packet serverTCP::receiveData_login(int sockfd){
     return packet;
 }
 void serverTCP::remove_player(int sockfd){
+    std::cout << "someone disconnected" << std::endl;
     for (auto play_it = players.begin(); play_it != players.end(); /* no increment here */) {
         if (play_it->second.sockfd == sockfd) {
             if(play_it->second.roomID != -1){
                 int roomID = play_it->second.roomID;
                 auto& room = roomList[roomID];
+                Packet ESC_packet(ESCMODE, play_it->first, "", 0, 0, play_it->first + " disconnected\n");
+                broadcast_chatroom(ESC_packet, sockfd);
                 for (auto it = room.begin(); it != room.end(); /* no increment here */) {
                     if (it->playerID == play_it->first) {
                         it = room.erase(it);  // erase 返回下一个有效迭代器
@@ -347,8 +349,7 @@ Packet serverTCP::receiveData_game(int sockfd){
         std::string name = get_player_name(sockfd);
         std::cout << name << " disconnected" << std::endl;
         //broadcast
-        Packet new_packet(MAPMODE, name.c_str(), "", -500, -500, "");
-        broadcast_xy(new_packet, sockfd);
+        remove_player(sockfd);
         //add to disconnect list
         disconnect_list[sockfd] = name;
         //close
