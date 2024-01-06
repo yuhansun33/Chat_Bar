@@ -3,8 +3,8 @@
 using namespace std;
 
 int main() {
-    serverTCP serverTCP;
     cout << "Server is running..." << endl;
+    serverTCP serverTCP;
     serverTCP.TCP_connect(LOGINPORT);
     serverTCP.login_mainloop();
 

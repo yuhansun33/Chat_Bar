@@ -20,6 +20,7 @@ bool Login(ClientConnectToServer& client, std::string& username, std::string& pa
     Packet packet2 = client.receiveData();
     if (packet2.mode_packet == LOGINMODE && strcmp(packet2.message, "login success") == 0) {
         std::cout << "Login success!" << std::endl;
+        client.~ClientConnectToServer();
         execlp("./main", "./main", packet2.sender_name, (char*)NULL);
         return true;
     } else {
