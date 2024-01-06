@@ -680,6 +680,7 @@ void initClientBasicElements(){
     lavenderBlush   = sf::Color(255, 240, 245);
     if (!bgm.openFromFile("Assets/Musics/bgm.ogg")) {
         perror("音樂加載失敗");
+        exit(-1);
     }
     if (!mapTexture.loadFromFile("Assets/Pictures/map.png")) {
         perror("地圖加載失敗");
@@ -754,7 +755,12 @@ int main(int argc, char** argv) {
         while(true){
             Packet clientReceivedPacket = TCPdata.receiveDataNonBlock();
             std::string minDistanceCharacterName;
-            if(clientReceivedPacket.mode_packet == EMPTYMODE) break;
+            if(clientReceivedPacket.sender_name == playerID){
+                break;
+            }
+            if(clientReceivedPacket.mode_packet == EMPTYMODE){
+                break;
+            }
             if(clientReceivedPacket.mode_packet == MAPMODE){
                 otherCharacters.updateOtherCharactersByPacket(mainCharacter, clientReceivedPacket);
                 chatEnvironment.chatMinDistanceReciever(chatRoomIcons.getMinDistance(), otherCharacters.getMinDistance(), chatRoomIcons.getMinDistanceChatRoomIcon(), otherCharacters.getMinDistanceCharacterName());
