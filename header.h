@@ -40,6 +40,14 @@
 #define ROOMMODE        8
 #define RANKMODE        9
 #define JOINMODE        10
+#define FRIENDMODE      11
+
+#define FRI_REQ_UNQULIF   0
+#define FRI_REQ_PENDING   1
+#define FRI_REQ_KEYDENY   2
+#define FRI_REQ_KEYSENT   3
+#define FRI_REQ_REPDENY   5
+
 
 #define REG_SUCCESS    0
 #define REG_REPEAT     1

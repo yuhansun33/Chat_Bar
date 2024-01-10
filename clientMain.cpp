@@ -28,6 +28,7 @@ classes:
     OtherCharacters: 其他玩家的集合
     Rank: 計分框的class
 */
+
 class Character {
     private:
         sf::Sprite characterSprite;
@@ -108,7 +109,7 @@ class ChatRoomIcon{
             chatRoomIconID = chatRoomIconPacket.sender_name;
             chatRoomIconPostion = sf::Vector2f(chatRoomIconPacket.x_packet, chatRoomIconPacket.y_packet);
             chatRoomIconSprite.setPosition(chatRoomIconPostion);
-            std::cout << "CHATROOMICON: " << chatRoomIconPostion.x << " " << chatRoomIconPostion.y << std::endl;
+            // std::cout << "CHATROOMICON: " << chatRoomIconPostion.x << " " << chatRoomIconPostion.y << std::endl;
             refreshDistance(mainCharacter);
         }
         ~ChatRoomIcon(){};
@@ -280,16 +281,14 @@ class ChatEnvironment{
         std::string chatTimeStr;
         std::string requestSenderName;
         std::string requestReceiverName;
-        sf::Texture friendReceiveTexture;
         sf::Texture requestTexture;
         sf::Texture chatroomTexture;
         sf::Texture chatClockTexture;
-        sf::Sprite friendReceiveSprite;
+
         sf::Sprite requestSprite;
         sf::Sprite chatroomSprite;
         sf::Sprite chatClockSprite;
         sf::Clock chatClock;
-        sf::Text friendSendText;
         sf::Text requestText;
         sf::Text chatRecord;
         sf::Text chatTimeText;
@@ -308,10 +307,6 @@ class ChatEnvironment{
             }
             if(!chatClockTexture.loadFromFile("Assets/Pictures/chatclock.png")){
                 perror("chatclock圖片加載失敗");
-                exit(-1);
-            }
-            if(!friendReceiveTexture.loadFromFile("Assets/Pictures/friendrequest.png")){
-                perror("friend圖片加載失敗");
                 exit(-1);
             }
             if(!chatRoomIconTexture.loadFromFile("Assets/Pictures/chatroomicon.png")){
@@ -333,17 +328,9 @@ class ChatEnvironment{
             chatClockSprite.setTexture(chatClockTexture);
             chatClockSprite.setScale(0.2f, 0.15f);
             chatClockSprite.setPosition(550, 73);
-            friendReceiveSprite.setTexture(friendReceiveTexture);
-            friendReceiveSprite.setScale(0.4f, 0.3f);
-            friendReceiveSprite.setPosition(100, 100);
             requestText.setFont(font);
             requestText.setCharacterSize(30);
             requestText.setFillColor(brown);
-            friendSendText.setFont(chatFont);
-            friendSendText.setCharacterSize(30);
-            friendSendText.setFillColor(sf::Color::White);
-            friendSendText.setPosition(150, 150);
-            // friendSendText.setString("Press Ctrl+F to send friend request or Press Ctrl+I to ignore it!");
             chatRecord.setFont(chatFont);
             chatRecord.setCharacterSize(30);
             chatRecord.setFillColor(sf::Color::White);
@@ -351,7 +338,6 @@ class ChatEnvironment{
             userInput.clear();
             chatState = CHATSTATENONE;
             changeView = false;
-            isFriendRequstCancealed = false;
             minDistance = INFINDISTANCE;
         }
 
@@ -419,7 +405,7 @@ class ChatEnvironment{
                     Packet chatPacket(CHATMODE, playerID, requestReceiverName.c_str(), 0, 0, userInput.c_str());
                     TCPdata.sendData(chatPacket);
                     chatHistory += playerID + "  :  " + userInput + "\n";
-                    std::cout << "chatHistory: \n" << chatHistory << std::endl;
+                    // std::cout << "chatHistory: \n" << chatHistory << std::endl;
                     userInput.clear();
                     chatMoveView();
                 }
@@ -427,7 +413,7 @@ class ChatEnvironment{
                     std::string message =  playerID + " left the chatroom.\nPress Esc back to map.";
                     Packet chatPacket(ESCMODE, playerID, requestReceiverName.c_str(), 0, 0, message.c_str());
                     TCPdata.sendData(chatPacket);
-                    std::cout << "發送離開聊天室訊息" << std::endl;
+                    // std::cout << "發送離開聊天室訊息" << std::endl;
                     chatHistory += message + "\n";  
                     changeView = true;
                     chatState = CHATSTATENONE;
@@ -435,7 +421,7 @@ class ChatEnvironment{
                     float minutes = duration.asSeconds() / 60.0f;
                     char minutesStr[20];
                     sprintf(minutesStr, "%.1f", minutes);
-                    std::cout << "minutes: " << minutesStr << " min" << std::endl;
+                    // std::cout << "minutes: " << minutesStr << " min" << std::endl;
                     Packet timePacket(TIMEMODE, playerID, "", 0, 0, minutesStr);
                     TCPdata.sendData(timePacket);
                 }
@@ -472,10 +458,10 @@ class ChatEnvironment{
 
         void chatHandlerEsc(Packet& chatPacket, ClientConnectToServer &TCPdata){
             if(chatState != CHATSTATECHAT) return;
-            std::cout << "收到離開聊天室訊息" << std::endl;
+            // std::cout << "收到離開聊天室訊息" << std::endl;
             std::string messageText(chatPacket.message);
             chatHistory += messageText + "\n";
-            std::cout << "chatHistory: \n" << chatHistory << std::endl;
+            // std::cout << "chatHistory: \n" << chatHistory << std::endl;
             chatMoveView(2*MOVEDISTANCE);
         }
 
@@ -530,7 +516,7 @@ class ChatEnvironment{
                 window.draw(enterInput);
                 window.draw(chatTimeText);
                 window.draw(chatClockSprite);
-                if(clockSeconds > 60 and !isFriendRequstCancealed) window.draw(friendSendText);
+                // if(clockSeconds > 60 and !isFriendRequstCancealed) window.draw(friendSendText);
             }
         }
 
@@ -669,6 +655,72 @@ class Rank {
         };
 };
 
+class Friend{
+    private:
+        sf::Texture friendReceiveTexture;
+        sf::Texture friendChecklistTexture;
+        sf::Sprite friendReceiveSprite;
+        sf::Sprite friendChecklistSprite;
+        sf::Text friendSendText;
+        int friendRequestState;
+    public:
+        Friend(){
+            if(!friendReceiveTexture.loadFromFile("Assets/Pictures/friendrequest.png")){
+                perror("friend圖片加載失敗");
+                exit(-1);
+            }
+            if(!friendChecklistTexture.loadFromFile("Assets/Pictures/request.png")){
+                perror("friend圖片加載失敗");
+                exit(-1);
+            }
+            friendChecklistSprite.setTexture(friendChecklistTexture);
+            friendChecklistSprite.setScale(0.5f, 0.5f);
+            friendChecklistSprite.setPosition(100, 100);
+            friendReceiveSprite.setTexture(friendReceiveTexture);
+            friendReceiveSprite.setScale(0.4f, 0.3f);
+            friendReceiveSprite.setPosition(100, 100);
+            friendSendText.setFont(chatFont);
+            friendSendText.setCharacterSize(30);
+            friendSendText.setFillColor(sf::Color::White);
+            friendSendText.setPosition(150, 150);
+            friendSendText.setString("Press Ctrl+F to open roomlist or Press Ctrl+I to ignore it!");
+            friendRequestState = FRI_REQ_UNQULIF;
+        }
+
+        void friendRequestTimeCheck(int clockSeconds){
+            if(clockSeconds > 60) friendRequestState = FRI_REQ_PENDING;
+        }
+
+        void friendRequestKeyHandler(sf::Event& event, ClientConnectToServer& TCPdata){
+            if(friendRequestState != FRI_REQ_PENDING) return;
+            if(event.key.code == sf::Keyboard::F && event.key.control){
+                friendRequestState = FRI_REQ_KEYSENT;
+                Packet friendRequestPacket(FRIENDMODE, playerID, "", 0, 0, "friend request");
+                TCPdata.sendData(friendRequestPacket);
+            }
+            if(event.key.code == sf::Keyboard::I && event.key.control){
+                friendRequestState = FRI_REQ_KEYDENY;
+            }
+        }
+
+        void friendReplyHandler(sf::Event& event, ClientConnectToServer& TCPdata, Packet& friendReplyPacket){
+            if(friendRequestState == FRI_REQ_UNQULIF) return;
+            if(friendRequestState == FRI_REQ_KEYSENT){
+                if(event.key.code == sf::Keyboard::Y){
+                    friendRequestState = FRI_REQ_PENDING;
+                    Packet friendRequestPacket(FRIENDMODE, playerID, friendReplyPacket.sender_name, 0, 0, "friend request accept");
+                    TCPdata.sendData(friendRequestPacket);
+                }
+                if(event.key.code == sf::Keyboard::N){
+                    friendRequestState = FRI_REQ_PENDING;
+                    Packet friendRequestPacket(FRIENDMODE, playerID, "", 0, 0, "friend request deny");
+                    TCPdata.sendData(friendRequestPacket);
+                }
+
+            }
+        }
+
+};
 void initClientBasicElements(){
     brown           = sf::Color(139, 69, 19);
     lavenderBlush   = sf::Color(255, 240, 245);
