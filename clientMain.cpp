@@ -391,7 +391,6 @@ class ChatEnvironment{
         void chatTextHandler(sf::Event& event, bool isWindowFocused){
             if(!isWindowFocused) return;
             if(chatState != CHATSTATECHAT) return;
-            std::cout << "text enter" << std::endl;
             if(event.text.unicode == '\b' && !userInput.empty()){
                 userInput.pop_back();
             }else if(event.text.unicode >= 32 && event.text.unicode <= 126){
@@ -548,7 +547,6 @@ class ChatEnvironment{
         }
         
         void chatMinDistanceReciever(float chatRoomMinDistance, float characterMinDistance, std::string chatRoomMinName, std::string characterMinName){
-            std::cout << "chatRoomMinDistance: " << chatRoomMinDistance << " characterMinDistance: " << characterMinDistance << std::endl;
             if(chatRoomMinDistance <= characterMinDistance){
                 requestReceiverName = chatRoomMinName;
                 minDistance = chatRoomMinDistance;
@@ -557,7 +555,6 @@ class ChatEnvironment{
                 requestReceiverName = characterMinName;
                 minDistance = characterMinDistance;
             }
-            std::cout << "minDistance: " << minDistance << std::endl;
             if(systemMessageUpdate()) return;
             if(minDistance == chatRoomMinDistance){
                 std::string message =  "Press Z to join the ChatRoom!";
@@ -773,6 +770,7 @@ int main(int argc, char** argv) {
                 chatEnvironment.chatReplyReceivedHandler(clientReceivedPacket);
             }
             if(clientReceivedPacket.mode_packet == TIMEMODE){
+                std::cout << "收到時間訊息" << std::endl;
                 rank.updateTime(clientReceivedPacket.message);
             }
             if(clientReceivedPacket.mode_packet == RANKMODE){
@@ -810,7 +808,6 @@ int main(int argc, char** argv) {
             TCPdata.sendData(packet);
             otherCharacters.updateOtherCharactersByMainCharacter(mainCharacter);
             chatRoomIcons.refreshAllChatRoomDistance(mainCharacter);
-            std::cout << "minDistance: " << chatRoomIcons.getMinDistance() << std::endl;
             chatEnvironment.chatMinDistanceReciever(chatRoomIcons.getMinDistance(), otherCharacters.getMinDistance(), chatRoomIcons.getMinDistanceChatRoomIcon(), otherCharacters.getMinDistanceCharacterName());
         }
         chatEnvironment.chatRequestReceiveHandler(TCPdata, mainCharacter);
