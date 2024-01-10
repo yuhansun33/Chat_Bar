@@ -236,11 +236,12 @@ class OtherCharacters{
             for(auto& otherCharacter : otherCharactersMap) otherCharacter.second.draw();
         }
         void updateOtherCharactersByPacket(Character& mainCharacter, Packet& otherCharacterUpdatePacket){
+            if(otherCharacterUpdatePacket.sender_name == playerID){
+                return;
+            }
             if(otherCharactersMap.find(otherCharacterUpdatePacket.sender_name) == otherCharactersMap.end()){
                 OtherCharacter otherCharacter(characterTexture, font, otherCharacterUpdatePacket.sender_name, otherCharacterUpdatePacket.x_packet, otherCharacterUpdatePacket.y_packet, mainCharacter.getPosition().x, mainCharacter.getPosition().y);
                 otherCharactersMap[otherCharacterUpdatePacket.sender_name] = otherCharacter;
-            } else if (otherCharacterUpdatePacket.x_packet == NOWHERE && otherCharacterUpdatePacket.y_packet == NOWHERE) {
-                otherCharactersMap.erase(otherCharacterUpdatePacket.sender_name);
             } else {
                 otherCharactersMap[otherCharacterUpdatePacket.sender_name].setPosition(otherCharacterUpdatePacket.x_packet, otherCharacterUpdatePacket.y_packet);
                 otherCharactersMap[otherCharacterUpdatePacket.sender_name].refreshDistance(mainCharacter.getPosition().x, mainCharacter.getPosition().y);
@@ -748,9 +749,6 @@ int main(int argc, char** argv) {
         while(true){
             Packet clientReceivedPacket = TCPdata.receiveDataNonBlock();
             std::string minDistanceCharacterName;
-            if(clientReceivedPacket.sender_name == playerID){
-                break;
-            }
             if(clientReceivedPacket.mode_packet == EMPTYMODE){
                 break;
             }
@@ -766,7 +764,6 @@ int main(int argc, char** argv) {
                 chatEnvironment.chatReplyReceivedHandler(clientReceivedPacket);
             }
             if(clientReceivedPacket.mode_packet == TIMEMODE){
-                std::cout << "收到時間訊息" << std::endl;
                 rank.updateTime(clientReceivedPacket.message);
             }
             if(clientReceivedPacket.mode_packet == RANKMODE){
@@ -778,25 +775,6 @@ int main(int argc, char** argv) {
             if(clientReceivedPacket.mode_packet == ESCMODE){
                 chatEnvironment.chatHandlerEsc(clientReceivedPacket, TCPdata);
             }
-            // switch (clientReceivedPacket.mode_packet) {
-            //     case MAPMODE:
-            //         otherCharacters.updateOtherCharactersByPacket(mainCharacter, clientReceivedPacket);
-            //         chatEnvironment.chatMinDistanceReciever(chatRoomIcons.getMinDistance(), otherCharacters.getMinDistance(), chatRoomIcons.getMinDistanceChatRoomIcon(), otherCharacters.getMinDistanceCharacterName());
-            //         break;
-            //     case REQMODE:
-            //         chatEnvironment.chatReplyReceivedHandler(clientReceivedPacket);
-            //         break;
-            //     case TIMEMODE:
-            //         rank.updateTime(clientReceivedPacket.message);
-            //         break;
-            //     case RANKMODE:
-            //         rank.updateRank(clientReceivedPacket.sender_name, clientReceivedPacket.message);
-            //         break;
-            //     case ROOMMODE:                    
-            //         chatRoomIcons.updateChatRoomIconByPacket(clientReceivedPacket, mainCharacter);
-            //         chatEnvironment.chatMinDistanceReciever(chatRoomIcons.getMinDistance(), otherCharacters.getMinDistance(), chatRoomIcons.getMinDistanceChatRoomIcon(), minDistanceCharacterName);
-            //         break;
-            // }
         }
         if(chatEnvironment.getChatState() == CHATSTATECHAT) goto chat;
         if (mainCharacter.mainCharacterMove(isWindowFocused)) {
