@@ -64,7 +64,7 @@ int main() {
     // 創建窗口
     ClientConnectToServer client;
     client.serverIPPort(SERVERIP, LOGINPORT);
-
+    client.turnOnNonBlock();
     sf::RenderWindow window(sf::VideoMode(550, 300), "Login Screen");
     window.setFramerateLimit(60);
 
@@ -130,7 +130,7 @@ int main() {
     bool loginSuccess = true;
 
     while (window.isOpen()) {
-        std::cout << "firstConnection: " << firstConnection << std::endl;
+        // std::cout << "firstConnection: " << firstConnection << std::endl;
         sf::Event event;
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) {

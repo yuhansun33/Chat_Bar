@@ -148,8 +148,8 @@ void serverTCP::game_mainloop(){
 }
 void serverTCP::game_handle(sqlServer& sqlServer){
     Packet packet = receiveData_game(sockfd);
-    std::cout << "sender: " << packet.sender_name << " (" << packet.x_packet << ", " << packet.y_packet << ")" << std::endl;
-    std::cout << "player num : " << players.size() << std::endl;
+    // std::cout << "sender: " << packet.sender_name << " (" << packet.x_packet << ", " << packet.y_packet << ")" << std::endl;
+    // std::cout << "player num : " << players.size() << std::endl;
 
     switch(packet.mode_packet) {
         case MAPMODE: {
