@@ -63,7 +63,7 @@ sudo ufw reload
 (client 程式阻擋) 不允許(server 程式阻擋) 其它
 12. 是否使用 ANSI escape sequence 或**其它方式**對螢幕輸出進行進階的控制? 有
 13. 當此專題程式的一局/盤結束後 client 程式也隨之結束，server 程式繼續執行且可處理新的 client
-14. 此專題程式使用到何種技術/system call? (多選) TCP UDP select fork
-non-blocking accept/connect DNS thread
+14. 此專題程式使用到何種技術/system call? (多選) TCP select fork
+non-blocking accept/connect
 15. 當此專題程式的一局/盤/配對開始/開設後，是否允許新的使用者加入已開啟/
 開設的一局/盤/配對? 允許
