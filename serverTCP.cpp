@@ -6,10 +6,10 @@ serverTCP::serverTCP(){
     signal(SIGCHLD, sig_chld);
     listenfd = socket(AF_INET, SOCK_STREAM, 0);
     // Set listenfd to non-blocking mode
-    // int flags = fcntl(listenfd, F_GETFL, 0);
-    // if (flags == -1) { std::cout << "fcntl F_GETFL error" << std::endl; }
-    // flags |= O_NONBLOCK;
-    // if (fcntl(listenfd, F_SETFL, flags) == -1) { std::cout << "fcntl F_SETFL error" << std::endl; }
+    int flags = fcntl(listenfd, F_GETFL, 0);
+    if (flags == -1) { std::cout << "fcntl F_GETFL error" << std::endl; }
+    flags |= O_NONBLOCK;
+    if (fcntl(listenfd, F_SETFL, flags) == -1) { std::cout << "fcntl F_SETFL error" << std::endl; }
 }
 void serverTCP::sig_chld(int signo){
     pid_t   pid;
