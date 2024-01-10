@@ -50,13 +50,13 @@ void serverTCP::login_mainloop(){
         //listenfd
         if(FD_ISSET(listenfd, &rset)){
             //accept
-            if(accept_client() == false) continue;
-            //讀 name
+            if(accept_client() != false){
             Packet packet = receiveData_login(connfd);
             std::cout << "sender: " << packet.sender_name << std::endl;
             //放入 vector
             Player new_player(connfd, LOGINMODE, 0, 0, packet.sender_name);
             players[packet.sender_name] = new_player;
+            }
         }
         //看每個 client
         for (auto& player : players){

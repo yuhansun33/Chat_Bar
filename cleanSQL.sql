@@ -7,7 +7,6 @@
 --DROP USER 'gameuser'@'localhost';
 
 -- 刪除資料庫
---DROP DATABASE IF EXISTS `chatbar`;
-
+DROP DATABASE IF EXISTS `chatbar`;
 DROP TABLE IF EXISTS `user`;
 DROP TABLE IF EXISTS `timeRecord`;

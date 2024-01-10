@@ -4,9 +4,14 @@ using namespace std;
 
 int main() {
     cout << "Game server is running..." << endl;
-    serverTCP serverTCP;
-    serverTCP.TCP_connect(GAMEPORT);
-    serverTCP.game_mainloop();
-
+    if(fork() == 0){
+        serverTCP serverTCP;
+        serverTCP.TCP_connect(LOGINPORT);
+        serverTCP.login_mainloop();
+    }else if(fork() > 0){
+        serverTCP serverTCP;
+        serverTCP.TCP_connect(GAMEPORT);
+        serverTCP.game_mainloop();
+    }
     return 0;
 }
