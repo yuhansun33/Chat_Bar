@@ -5,6 +5,9 @@
 serverTCP::serverTCP(){
     signal(SIGCHLD, sig_chld);
     listenfd = socket(AF_INET, SOCK_STREAM, 0);
+    if(listenfd < 0){
+        perror("Failed to create socket");
+    }
     // Set listenfd to non-blocking mode
     int flags = fcntl(listenfd, F_GETFL, 0);
     if (flags == -1) { std::cout << "fcntl F_GETFL error" << std::endl; }
@@ -33,7 +36,7 @@ bool serverTCP::accept_client(){
     clilen = sizeof(cliaddr);
     if ( (connfd = accept(listenfd, (SA *) &cliaddr, &clilen)) < 0) {
         if (errno != EINTR){
-            // std::cout << "accept error" << std::endl;
+            std::cout << "accept error" << std::endl;
             return false;
             // perror("accept error");
         }
@@ -199,15 +202,15 @@ void serverTCP::game_handle(sqlServer& sqlServer){
             std::cout << "send chat message: " << packet.sender_name << std::endl;
             Packet new_packet(CHATMODE, packet.sender_name, packet.receiver_name, 0, 0, packet.message);
             // sendData(new_packet, receiver_sockfd);
-            broadcast_chatroom(new_packet, sockfd);
+            broadcast_chatroom(new_packet, VIRTUALFD);
             // std::cout << " ==> " << packet.receiver_name << std::endl;
             break;
         }
         case ESCMODE: {
-            int receiver_sockfd = players[packet.receiver_name].sockfd;
+            int sender_sockfd = players[packet.sender_name].sockfd;
             std::cout << "send esc message: " << packet.sender_name;
             Packet new_packet(ESCMODE, packet.sender_name, packet.receiver_name, 0, 0, packet.message);
-            broadcast_chatroom(new_packet, sockfd);
+            broadcast_chatroom(new_packet, sender_sockfd);
             //清空聊天室
             int roomID = players[packet.sender_name].roomID;
             auto& room = roomList[roomID];
@@ -277,8 +280,14 @@ std::string serverTCP::serialize(Packet packet){
 }
 Packet serverTCP::deserialize(std::string& json_string){
     Packet packet;
-    json j = json::parse(json_string);
-    packet = packet.json_to_packet(j);
+    try {
+        json j = json::parse(json_string);
+        packet = packet.json_to_packet(j);
+    } catch (const json::exception& e) {
+        std::cerr << "packet 反序列化出錯了！: " << e.what() << std::endl;
+        packet = Packet();
+        return packet;
+    }
     return packet;
 }
 void serverTCP::sendData(Packet& packet, int sockfd){
@@ -286,6 +295,8 @@ void serverTCP::sendData(Packet& packet, int sockfd){
     data += "\n";
     if (send(sockfd, data.c_str(), data.size(), 0) == -1) {
         perror("Failed to send data");
+        std::cout << "sockfd: " << sockfd << std::endl;
+        packet.printPacket();
     }
 }
 Packet serverTCP::receiveData_login(int sockfd){
@@ -350,6 +361,7 @@ Packet serverTCP::receiveData_game(int sockfd){
         std::cout << name << " disconnected" << std::endl;
         //broadcast
         remove_player(sockfd);
+        std::cout << "sockfd removed" << std::endl;
         //add to disconnect list
         disconnect_list[sockfd] = name;
         //close
