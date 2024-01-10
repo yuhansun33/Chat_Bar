@@ -457,7 +457,7 @@ class ChatEnvironment{
         }
 
         void chatHandlerEsc(Packet& chatPacket, ClientConnectToServer &TCPdata){
-            if(chatState != CHATSTATECHAT) return;
+            if(chatState != CHATSTATECHAT or chatPacket.sender_name ==playerID) return;
             // std::cout << "收到離開聊天室訊息" << std::endl;
             std::string messageText(chatPacket.message);
             chatHistory += messageText + "\n";
@@ -466,7 +466,7 @@ class ChatEnvironment{
         }
 
         void chatHandlerChat(Packet& chatPacket, ClientConnectToServer &TCPdata){
-            if(chatState != CHATSTATECHAT) return;
+            if(chatState != CHATSTATECHAT or chatPacket.sender_name == playerID) return;
             std::string senderName(chatPacket.sender_name);
             std::string messageText(chatPacket.message);
             chatHistory +=  senderName + "  :  " + messageText + "\n";

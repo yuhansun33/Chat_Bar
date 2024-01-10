@@ -64,7 +64,7 @@ int main() {
     // 創建窗口
     ClientConnectToServer client;
     client.serverIPPort(SERVERIP, LOGINPORT);
-    client.turnOnNonBlock();
+    // client.turnOnNonBlock();
     sf::RenderWindow window(sf::VideoMode(550, 300), "Login Screen");
     window.setFramerateLimit(60);
 
