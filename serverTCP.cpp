@@ -54,11 +54,10 @@ void serverTCP::login_mainloop(){
         if(FD_ISSET(listenfd, &rset)){
             //accept
             if(accept_client() != false){
-            Packet packet = receiveData_login(connfd);
-            std::cout << "sender: " << packet.sender_name << std::endl;
-            //放入 vector
-            Player new_player(connfd, LOGINMODE, 0, 0, packet.sender_name);
-            players[packet.sender_name] = new_player;
+                Packet packet = receiveData_login(connfd);
+                std::cout << "sender: " << packet.sender_name << std::endl;
+                Player new_player(connfd, LOGINMODE, 0, 0, packet.sender_name);
+                players[packet.sender_name] = new_player;
             }
         }
         //看每個 client
@@ -129,23 +128,17 @@ void serverTCP::game_mainloop(){
     while (true) {
         rset = allset;
         n = select(maxfd + 1, &rset, NULL, NULL, NULL);
-        //listenfd
         if(FD_ISSET(listenfd, &rset)){
-            //accept
             if(accept_client() != false){
-                //new client handle
                 new_game_handle(sqlServer);
             }
         }
-        //看每個 client
         for (auto& player : players){
             sockfd = player.second.sockfd;
             if(FD_ISSET(sockfd, &rset)){
-                //handle every client
                 game_handle(sqlServer);
             }
         }
-        //disconnect list handle
         while(!disconnect_list.empty()){
             auto firstElement = disconnect_list.begin();
             players.erase(firstElement->second);
@@ -232,7 +225,6 @@ void serverTCP::game_handle(sqlServer& sqlServer){
             break;
         }
         case TIMEMODE: {
-            std::cout << "收到 time mode" << std::endl;
             int self_sockfd = players[packet.sender_name].sockfd;
             //time mode
             sqlServer.addtimelen(packet.sender_name, packet.message);
@@ -267,17 +259,16 @@ void serverTCP::new_game_handle(sqlServer& sqlServer){
     //放入 vector
     Player new_player(connfd, MAPMODE, packet.x_packet, packet.y_packet, packet.sender_name);
     players[packet.sender_name] = new_player;
-    //資料庫放入名字
     sqlServer.db_information(packet.sender_name, "");
-    //發送個人累積聊天時間
     sendSelfTotalTime(sqlServer, packet.sender_name, connfd);
-    //廣播最大聊天時間
     broadcastMaxTime(sqlServer);
 }
+
 std::string serverTCP::serialize(Packet packet){
     std::string data = packet.packet_to_json().dump();
     return data;
 }
+
 Packet serverTCP::deserialize(std::string& json_string){
     Packet packet;
     try {
@@ -290,6 +281,7 @@ Packet serverTCP::deserialize(std::string& json_string){
     }
     return packet;
 }
+
 void serverTCP::sendData(Packet& packet, int sockfd){
     std::string data = serialize(packet);
     data += "\n";
@@ -299,6 +291,7 @@ void serverTCP::sendData(Packet& packet, int sockfd){
         packet.printPacket();
     }
 }
+
 Packet serverTCP::receiveData_login(int sockfd){
     char buffer[MAXLINE];
     bzero(buffer, MAXLINE);
@@ -349,6 +342,7 @@ void serverTCP::remove_player(int sockfd){
         }
     }
 }
+
 Packet serverTCP::receiveData_game(int sockfd){
     char buffer[MAXLINE];
     bzero(buffer, MAXLINE);
@@ -374,6 +368,7 @@ Packet serverTCP::receiveData_game(int sockfd){
     Packet packet = deserialize(data);
     return packet;
 }
+
 void serverTCP::broadcast_xy(Packet& packet, int sockfd){
     for (auto& player : players){
         if(player.second.sockfd != sockfd and disconnect_list.find(player.second.sockfd) == disconnect_list.end()){

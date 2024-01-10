@@ -4,7 +4,7 @@
 
 ClientConnectToServer::ClientConnectToServer() {
     socketfd = socket(AF_INET, SOCK_STREAM, 0);
-    int buffersize = 4096;
+    int buffersize = 8*1024;
     setsockopt(socketfd, SOL_SOCKET, SO_SNDBUF, &buffersize, sizeof(buffersize));
     flag = fcntl(socketfd, F_GETFL, 0);
     if (socketfd < 0) {

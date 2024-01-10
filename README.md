@@ -21,9 +21,17 @@
 ## 必要函式庫：
 
 sudo apt install nlohmann-json3-dev
+
 sudo apt-get install libsfml-dev
+
 sudo apt-get install libmysqlcppconn-dev
+
 sudo apt-get install libssl-dev
+
+## Server firewall configure
+sudo ufw allow 11131/tcp
+
+sudo ufw allow 11130/tcp
 
 
 ## spec項目

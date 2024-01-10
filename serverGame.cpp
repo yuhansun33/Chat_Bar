@@ -3,15 +3,9 @@
 using namespace std;
 
 int main() {
+    serverTCP serverTCP;
     cout << "Game server is running..." << endl;
-    if(fork() == 0){
-        serverTCP serverTCP;
-        serverTCP.TCP_connect(LOGINPORT);
-        serverTCP.login_mainloop();
-    }else if(fork() > 0){
-        serverTCP serverTCP;
-        serverTCP.TCP_connect(GAMEPORT);
-        serverTCP.game_mainloop();
-    }
+    serverTCP.TCP_connect(GAMEPORT);
+    serverTCP.game_mainloop();
     return 0;
 }
