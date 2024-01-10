@@ -469,25 +469,21 @@ class ChatEnvironment{
             }
         }
 
-        void chatHandler(Packet& chatPacket, ClientConnectToServer &TCPdata){
+        void chatHandlerEsc(Packet& chatPacket, ClientConnectToServer &TCPdata){
             if(chatState != CHATSTATECHAT) return;
-            do{
-                if(chatPacket.mode_packet == EMPTYMODE) break;
-                if(chatPacket.mode_packet == CHATMODE){
-                    std::string senderName(chatPacket.sender_name);
-                    std::string messageText(chatPacket.message);
-                    chatHistory +=  senderName + "  :  " + messageText + "\n";
-                    chatMoveView();
-                }
-                if(chatPacket.mode_packet == ESCMODE){
-                    std::cout << "收到離開聊天室訊息" << std::endl;
-                    std::string messageText(chatPacket.message);
-                    chatHistory += messageText + "\n";
-                    std::cout << "chatHistory: \n" << chatHistory << std::endl;
-                    chatMoveView(2*MOVEDISTANCE);
-                }
-                chatPacket = TCPdata.receiveDataNonBlock();
-            }while(true);
+            std::cout << "收到離開聊天室訊息" << std::endl;
+            std::string messageText(chatPacket.message);
+            chatHistory += messageText + "\n";
+            std::cout << "chatHistory: \n" << chatHistory << std::endl;
+            chatMoveView(2*MOVEDISTANCE);
+        }
+
+        void chatHandlerChat(Packet& chatPacket, ClientConnectToServer &TCPdata){
+            if(chatState != CHATSTATECHAT) return;
+            std::string senderName(chatPacket.sender_name);
+            std::string messageText(chatPacket.message);
+            chatHistory +=  senderName + "  :  " + messageText + "\n";
+            chatMoveView();
         }
 
         void chatMoveView(float distance = MOVEDISTANCE){
@@ -777,10 +773,10 @@ int main(int argc, char** argv) {
                 rank.updateRank(clientReceivedPacket.sender_name, clientReceivedPacket.message);
             }
             if(clientReceivedPacket.mode_packet == CHATMODE){
-                chatEnvironment.chatHandler(clientReceivedPacket, TCPdata);
+                chatEnvironment.chatHandlerChat(clientReceivedPacket, TCPdata);
             }
             if(clientReceivedPacket.mode_packet == ESCMODE){
-                chatEnvironment.chatHandler(clientReceivedPacket, TCPdata);
+                chatEnvironment.chatHandlerEsc(clientReceivedPacket, TCPdata);
             }
             // switch (clientReceivedPacket.mode_packet) {
             //     case MAPMODE:
