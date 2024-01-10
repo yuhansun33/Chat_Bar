@@ -33,7 +33,7 @@ sudo ufw allow 11131/tcp
 
 sudo ufw allow 11130/tcp
 
-
+sudo ufw reload
 ## spec項目
 
 1. 此期末專題的性質為 
