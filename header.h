@@ -69,7 +69,7 @@
 #define LISTENQ             1024
 #define MOVEDISTANCE        37
 #define SA                  struct sockaddr
-#define SERVERIP            "25.33.134.14"
+#define SERVERIP            "25.33.246.63"
 #define SQLPASSWD           "eee3228133@"
 
 #endif
