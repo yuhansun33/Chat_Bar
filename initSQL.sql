@@ -1,4 +1,4 @@
-CREATE USER gameuser@localhost IDENTIFIED BY 'Eee3228133@';
+CREATE USER gameuser@localhost IDENTIFIED BY 'Np2023@finalproject';
 GRANT ALL PRIVILEGES ON *.* TO gameuser@localhost WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 

@@ -70,6 +70,6 @@
 #define MOVEDISTANCE        37
 #define SA                  struct sockaddr
 #define SERVERIP            "127.0.0.1"
-#define SQLPASSWD           "eee3228133@"
+#define SQLPASSWD           "Np2023@finalproject"
 
 #endif

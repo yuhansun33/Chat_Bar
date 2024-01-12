@@ -444,7 +444,7 @@ void serverTCP::sendSelfTotalTime(sqlServer& sqlServer, char* name, int sockfd){
 sqlServer::sqlServer(){
     //connect MySQL
     driver = sql::mysql::get_mysql_driver_instance();
-    con = driver->connect("tcp://127.0.0.1:3306", "gameuser", "Eee3228133@");
+    con = driver->connect("tcp://127.0.0.1:3306", "gameuser", SQLPASSWD);
     //choose database
     con->setSchema("chatbar");
 }
