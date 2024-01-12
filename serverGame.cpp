@@ -6,6 +6,7 @@ int main() {
     serverTCP serverTCP;
     cout << "Game server is running..." << endl;
     serverTCP.TCP_connect(GAMEPORT);
+    serverTCP.turnOnNonBlock();
     serverTCP.game_mainloop();
     return 0;
 }

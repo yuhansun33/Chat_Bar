@@ -16,6 +16,7 @@ public:
     void login_handle(sqlServer& sqlserver);
 //game server
     void game_mainloop();
+    void turnOnNonBlock();
     void new_game_handle(sqlServer& sqlServer);
     void game_handle(sqlServer& sqlServer);
     void sendData(Packet& packet, int sockfd);
