@@ -755,7 +755,7 @@ void initClientBasicElements(){
     window.setFramerateLimit(60);
     
     bgm.setLoop(true);
-    //bgm.play();
+    bgm.play();
 
     view.reset(sf::FloatRect(0.f, 0.f, 800.f, 600.f));
 }
